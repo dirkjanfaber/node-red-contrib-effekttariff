@@ -1,0 +1,206 @@
+<script type="text/javascript">
+  RED.nodes.registerType('effekttariff', {
+    category: 'Victron Energy',
+    color: '#F7AB3E',
+    defaults: {
+      name: { value: '' },
+      peakCount: { value: 3, validate: RED.validators.number() },
+      onePeakPerDay: { value: true },
+      peakHoursStart: { value: 7, validate: RED.validators.number() },
+      peakHoursEnd: { value: 21, validate: RED.validators.number() },
+      weekdaysOnly: { value: false },
+      nightDiscount: { value: false },
+      peakSeasonOnly: { value: true },
+      peakSeasonStart: { value: 11, validate: RED.validators.number() },
+      peakSeasonEnd: { value: 3, validate: RED.validators.number() },
+      minimumLimit: { value: 4, validate: RED.validators.number() },
+      headroom: { value: 0.3, validate: RED.validators.number() },
+      phases: { value: 3, validate: RED.validators.number() },
+      gridVoltage: { value: 230, validate: RED.validators.number() },
+      maxBreakerCurrent: { value: 25, validate: RED.validators.number() }
+    },
+    inputs: 1,
+    outputs: 2,
+    icon: 'font-awesome/fa-bolt',
+    label: function () {
+      return this.name || 'Effekttariff'
+    },
+    paletteLabel: 'Effekttariff',
+    inputLabels: ['Grid Power (W)'],
+    outputLabels: ['Current Limit (A)', 'Status'],
+    oneditprepare: function () {
+      // Season month dropdowns
+      const months = [
+        { value: 1, label: 'January' },
+        { value: 2, label: 'February' },
+        { value: 3, label: 'March' },
+        { value: 4, label: 'April' },
+        { value: 5, label: 'May' },
+        { value: 6, label: 'June' },
+        { value: 7, label: 'July' },
+        { value: 8, label: 'August' },
+        { value: 9, label: 'September' },
+        { value: 10, label: 'October' },
+        { value: 11, label: 'November' },
+        { value: 12, label: 'December' }
+      ]
+
+      const $seasonStart = $('#node-input-peakSeasonStart')
+      const $seasonEnd = $('#node-input-peakSeasonEnd')
+
+      months.forEach(m => {
+        $seasonStart.append($('<option>').val(m.value).text(m.label))
+        $seasonEnd.append($('<option>').val(m.value).text(m.label))
+      })
+
+      $seasonStart.val(this.peakSeasonStart || 11)
+      $seasonEnd.val(this.peakSeasonEnd || 3)
+
+      // Toggle season fields visibility
+      function toggleSeasonFields () {
+        const show = $('#node-input-peakSeasonOnly').is(':checked')
+        $('.season-row').toggle(show)
+      }
+
+      $('#node-input-peakSeasonOnly').on('change', toggleSeasonFields)
+      toggleSeasonFields()
+    }
+  })
+</script>
+
+<script type="text/html" data-template-name="effekttariff">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="effekttariff.label.name">Name</span></label>
+    <input type="text" id="node-input-name" data-i18n="[placeholder]effekttariff.placeholder.name">
+  </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.peak">Peak Measurement</h4>
+
+  <div class="form-row">
+    <label for="node-input-peakCount"><i class="fa fa-list-ol"></i> <span data-i18n="effekttariff.label.peakCount">Peaks to average</span></label>
+    <input type="number" id="node-input-peakCount" min="2" max="5" style="width:60px">
+  </div>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-onePeakPerDay" style="width:auto; margin-right:5px">
+    <label for="node-input-onePeakPerDay" style="width:auto" data-i18n="effekttariff.label.onePeakPerDay">One peak per day only</label>
+  </div>
+
+  <div class="form-row">
+    <label for="node-input-peakHoursStart"><i class="fa fa-clock-o"></i> <span data-i18n="effekttariff.label.peakHours">Peak hours</span></label>
+    <input type="number" id="node-input-peakHoursStart" min="0" max="23" style="width:60px">
+    <span>-</span>
+    <input type="number" id="node-input-peakHoursEnd" min="0" max="23" style="width:60px">
+  </div>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-weekdaysOnly" style="width:auto; margin-right:5px">
+    <label for="node-input-weekdaysOnly" style="width:auto" data-i18n="effekttariff.label.weekdaysOnly">Weekdays only</label>
+  </div>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-nightDiscount" style="width:auto; margin-right:5px">
+    <label for="node-input-nightDiscount" style="width:auto" data-i18n="effekttariff.label.nightDiscount">Night discount 50% (22-06)</label>
+  </div>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-peakSeasonOnly" style="width:auto; margin-right:5px">
+    <label for="node-input-peakSeasonOnly" style="width:auto" data-i18n="effekttariff.label.peakSeasonOnly">Winter season only</label>
+  </div>
+
+  <div class="form-row season-row">
+    <label for="node-input-peakSeasonStart"><i class="fa fa-calendar"></i> <span data-i18n="effekttariff.label.season">Season</span></label>
+    <select id="node-input-peakSeasonStart" style="width:120px"></select>
+    <span>-</span>
+    <select id="node-input-peakSeasonEnd" style="width:120px"></select>
+  </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.limits">Limits</h4>
+
+  <div class="form-row">
+    <label for="node-input-minimumLimit"><i class="fa fa-minus-circle"></i> <span data-i18n="effekttariff.label.minimumLimit">Minimum (kW)</span></label>
+    <input type="number" id="node-input-minimumLimit" min="2" max="20" step="0.5" style="width:80px">
+  </div>
+
+  <div class="form-row">
+    <label for="node-input-headroom"><i class="fa fa-arrows-v"></i> <span data-i18n="effekttariff.label.headroom">Headroom (kW)</span></label>
+    <input type="number" id="node-input-headroom" min="0" max="2" step="0.1" style="width:80px">
+  </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.electrical">Electrical</h4>
+
+  <div class="form-row">
+    <label for="node-input-phases"><i class="fa fa-plug"></i> <span data-i18n="effekttariff.label.phases">Phases</span></label>
+    <input type="number" id="node-input-phases" min="1" max="3" style="width:60px">
+  </div>
+
+  <div class="form-row">
+    <label for="node-input-gridVoltage"><i class="fa fa-bolt"></i> <span data-i18n="effekttariff.label.gridVoltage">Grid voltage (V)</span></label>
+    <input type="number" id="node-input-gridVoltage" min="100" max="400" style="width:80px">
+  </div>
+
+  <div class="form-row">
+    <label for="node-input-maxBreakerCurrent"><i class="fa fa-exclamation-triangle"></i> <span data-i18n="effekttariff.label.maxBreakerCurrent">Max breaker (A)</span></label>
+    <input type="number" id="node-input-maxBreakerCurrent" min="10" max="63" style="width:80px">
+  </div>
+</script>
+
+<script type="text/html" data-help-name="effekttariff">
+  <p>Swedish effekttariff (power tariff) peak shaving controller.</p>
+
+  <h3>Input</h3>
+  <dl class="message-properties">
+    <dt>payload <span class="property-type">number</span></dt>
+    <dd>Grid power in Watts (positive = import from grid)</dd>
+  </dl>
+
+  <h3>Outputs</h3>
+  <ol class="node-ports">
+    <li>Current Limit
+      <dl class="message-properties">
+        <dt>payload <span class="property-type">number</span></dt>
+        <dd>Target current limit in Amperes. Only outputs when value changes.</dd>
+      </dl>
+    </li>
+    <li>Status
+      <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Status object with peak data for debugging/dashboard</dd>
+      </dl>
+    </li>
+  </ol>
+
+  <h3>Details</h3>
+  <p>The Swedish effekttariff charges based on the average of your 2-3 highest
+  hourly consumption peaks during the month.</p>
+
+  <p>This node:</p>
+  <ul>
+    <li>Tracks hourly average consumption</li>
+    <li>Records top peaks for the month</li>
+    <li>Outputs a current limit to keep new peaks below existing ones</li>
+    <li>Resets automatically on the 1st of each month</li>
+  </ul>
+
+  <h4>Learning Phase</h4>
+  <p>At the start of each month, the node enters a learning phase until it has
+  recorded enough peaks. During learning, it outputs the minimum limit to
+  prevent establishing unnecessarily high peaks.</p>
+
+  <h4>Status Indicator</h4>
+  <ul>
+    <li><b>Grey ring</b>: Off-season</li>
+    <li><b>Green ring</b>: Off-peak hours</li>
+    <li><b>Blue ring</b>: Learning phase</li>
+    <li><b>Blue dot</b>: Peak hours, usage below target</li>
+    <li><b>Yellow dot</b>: Approaching target (&gt;85%)</li>
+    <li><b>Red dot</b>: Over target (&gt;105%)</li>
+  </ul>
+</script>

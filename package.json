@@ -1,0 +1,46 @@
+{
+  "name": "node-red-contrib-effekttariff",
+  "version": "0.1.0",
+  "description": "Node-RED node for Swedish effekttariff (power tariff) peak shaving",
+  "keywords": [
+    "node-red",
+    "victron",
+    "effekttariff",
+    "peak-shaving",
+    "sweden",
+    "energy"
+  ],
+  "author": "Dirk-Jan Faber",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dirkjanfaber/node-red-contrib-effekttariff.git"
+  },
+  "main": "src/nodes/effekttariff.js",
+  "scripts": {
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "node-red": {
+    "version": ">=2.0.0",
+    "nodes": {
+      "effekttariff": "src/nodes/effekttariff.js"
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.7.0"
+  },
+  "peerDependencies": {
+    "node-red": ">=2.0.0"
+  }
+}

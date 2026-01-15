@@ -1,0 +1,27 @@
+{
+  "effekttariff": {
+    "label": {
+      "name": "Name",
+      "peakCount": "Peaks to average",
+      "onePeakPerDay": "One peak per day only",
+      "peakHours": "Peak hours",
+      "weekdaysOnly": "Weekdays only",
+      "nightDiscount": "Night discount 50% (22-06)",
+      "peakSeasonOnly": "Winter season only",
+      "season": "Season",
+      "minimumLimit": "Minimum (kW)",
+      "headroom": "Headroom (kW)",
+      "phases": "Phases",
+      "gridVoltage": "Grid voltage (V)",
+      "maxBreakerCurrent": "Max breaker (A)"
+    },
+    "placeholder": {
+      "name": "Name"
+    },
+    "section": {
+      "peak": "Peak Measurement",
+      "limits": "Limits",
+      "electrical": "Electrical"
+    }
+  }
+}

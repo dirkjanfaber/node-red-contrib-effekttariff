@@ -1,0 +1,27 @@
+{
+  "effekttariff": {
+    "label": {
+      "name": "Namn",
+      "peakCount": "Toppar att medelvärdesberäkna",
+      "onePeakPerDay": "Endast en topp per dag",
+      "peakHours": "Höglasttimmar",
+      "weekdaysOnly": "Endast vardagar",
+      "nightDiscount": "Nattrabatt 50% (22-06)",
+      "peakSeasonOnly": "Endast vintersäsong",
+      "season": "Säsong",
+      "minimumLimit": "Minimigräns (kW)",
+      "headroom": "Marginal (kW)",
+      "phases": "Faser",
+      "gridVoltage": "Nätspänning (V)",
+      "maxBreakerCurrent": "Max säkring (A)"
+    },
+    "placeholder": {
+      "name": "Namn"
+    },
+    "section": {
+      "peak": "Toppmätning",
+      "limits": "Gränser",
+      "electrical": "Elektriskt"
+    }
+  }
+}
