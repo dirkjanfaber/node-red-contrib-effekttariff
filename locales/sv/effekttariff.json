@@ -13,7 +13,13 @@
       "headroom": "Marginal (kW)",
       "phases": "Faser",
       "gridVoltage": "Nätspänning (V)",
-      "maxBreakerCurrent": "Max säkring (A)"
+      "maxBreakerCurrent": "Max säkring (A)",
+      "batteryEnabled": "Aktivera batteriladdning",
+      "socContextKey": "SOC-kontextnyckel",
+      "minSocContextKey": "Min SOC-kontextnyckel",
+      "batteryCapacity": "Kapacitet (kWh)",
+      "maxChargeRate": "Max laddning (W)",
+      "socBuffer": "SOC-buffert (%)"
     },
     "placeholder": {
       "name": "Namn"
@@ -21,7 +27,8 @@
     "section": {
       "peak": "Toppmätning",
       "limits": "Gränser",
-      "electrical": "Elektriskt"
+      "electrical": "Elektriskt",
+      "battery": "Batteriladdning"
     }
   }
 }

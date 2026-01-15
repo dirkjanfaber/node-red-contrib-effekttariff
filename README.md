@@ -32,6 +32,10 @@ Connect a Grid Meter node (Power in Watts) to the input. The node expects positi
 
 2. **Status**: Object with detailed peak data for debugging or dashboard display.
 
+3. **Charge Rate (W)**: Battery charge rate recommendation in Watts (only when battery charging is enabled). Connect to your battery charge controller to ensure the battery is charged before peak hours.
+
+4. **Chart Data**: Array of chart-ready messages for FlowFuse Dashboard 2.0 (`@flowfuse/node-red-dashboard`). Connect to a `ui-chart` node to visualize consumption, limits, and peaks in real-time. Each message has a `topic` (series name) and `payload` with `x` (timestamp) and `y` (value). Series include: `consumption`, `limit`, `target`, `peak_avg`, `battery_soc`.
+
 ## Configuration
 
 ### Peak Measurement
@@ -61,6 +65,30 @@ Connect a Grid Meter node (Power in Watts) to the input. The node expects positi
 | Grid voltage | Your grid voltage | 230 V |
 | Max breaker | Safety cap, never exceed this | 25 A |
 
+### Battery Charging (Optional)
+
+Enable smart battery charging to ensure your battery is charged before peak hours. This allows effective peak shaving by having enough stored energy ready.
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Enable battery charging | Activate battery charge control | No |
+| SOC context key | Global context key for current SOC (%) | `battery.soc` |
+| Min SOC context key | Global context key for minimum SOC (%) | `battery.minSoc` |
+| Capacity (kWh) | Battery capacity in kWh | 10 kWh |
+| Max charge rate (W) | Maximum charge rate in Watts | 3000 W |
+| SOC buffer (%) | Target SOC = minSoc + buffer | 20% |
+
+**How it works:**
+- During off-peak hours, the node calculates how much time remains until peak hours
+- It determines the energy needed to reach target SOC (minSoc + buffer)
+- Outputs a charge rate that ensures the battery is ready before peaks
+- During peak hours, charge rate is 0 (battery should be available for discharge)
+
+**Integration:**
+1. Set up a battery monitoring node to store SOC in global context
+2. Configure the context keys to match your setup
+3. Connect the third output (Charge Rate) to your battery charge controller
+
 ## Status Indicator
 
 - **Grey ring**: Off-season
@@ -88,6 +116,84 @@ Example at 230V: 4 kW = 17.4A (1-phase) or 5.8A (3-phase)
 | Ellevio | 3 | 07-19 | Nov-Mar | No | Yes |
 | Kungälv Energi | 3 | 07-21 | Nov-Mar | Yes | Yes |
 | Jönköping Energi | 2 | 07-21 | All year | No | No |
+
+## Simulation & Testing
+
+The package includes a simulation framework for testing and validating system behavior without connecting to real hardware.
+
+### Running Simulations
+
+```bash
+# List all available scenarios
+npm run simulate
+
+# Run a specific scenario
+npm run simulate:scenario basicWeek
+
+# Run all scenarios
+npm run simulate:all
+
+# Run with verbose output
+npm run simulate:verbose basicWeek
+
+# Generate HTML report with interactive charts
+node scripts/run-simulation.js basicWeek --html
+
+# Export data to CSV files
+node scripts/run-simulation.js basicWeek --csv
+
+# Generate both HTML and CSV
+node scripts/run-simulation.js basicWeek --html --csv
+```
+
+### Visualization Options
+
+The simulation CLI supports two visualization modes:
+
+**HTML Report** (`--html`): Generates an interactive HTML report with Chart.js charts showing:
+- Hourly power consumption vs limit (line chart)
+- Top recorded peaks (horizontal bar chart)
+- Battery SOC over time (if applicable)
+- Battery charge rate (if applicable)
+
+The HTML file auto-opens in your default browser.
+
+**CSV Export** (`--csv`): Exports simulation data to CSV files:
+- `*_hourly.csv` - Hourly consumption data
+- `*_peaks.csv` - Peak records with timestamps
+- `*_limits.csv` - Limit changes over time
+- `*_battery.csv` - Battery data (if applicable)
+
+Output files are saved to `./simulation-output/`.
+
+### Available Scenarios
+
+| Scenario | Description | Duration |
+|----------|-------------|----------|
+| `basicWeek` | Typical Swedish household consumption | 7 days |
+| `fullMonth` | Complete month to verify peak reset | 35 days |
+| `highSpikes` | Baseline with EV charging/sauna spikes | 14 days |
+| `nightDiscount` | Tests night discount (nattsänkning) feature | 7 days |
+| `weekdaysOnly` | Weekday-only limit enforcement (Ellevio style) | 14 days |
+| `winterSeason` | Winter season filtering (Nov-Mar) | 60 days |
+| `singlePhase` | Single phase installation | 7 days |
+| `minimumLimit` | Very low consumption, minimum limit test | 7 days |
+| `jonkoping` | Jönköping Energi configuration (2 peaks) | 14 days |
+| `stressTest` | High variability consumption | 30 days |
+| `batteryCharging` | Smart battery charging during off-peak | 7 days |
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run in watch mode during development
+npm run test:watch
+```
 
 ## License
 

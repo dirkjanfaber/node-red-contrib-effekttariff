@@ -21,7 +21,10 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "simulate": "node scripts/run-simulation.js",
+    "simulate:all": "node scripts/run-simulation.js all",
+    "simulate:verbose": "node scripts/run-simulation.js all -v"
   },
   "node-red": {
     "version": ">=2.0.0",

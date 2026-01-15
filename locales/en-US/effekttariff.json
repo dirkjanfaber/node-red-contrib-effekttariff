@@ -13,7 +13,13 @@
       "headroom": "Headroom (kW)",
       "phases": "Phases",
       "gridVoltage": "Grid voltage (V)",
-      "maxBreakerCurrent": "Max breaker (A)"
+      "maxBreakerCurrent": "Max breaker (A)",
+      "batteryEnabled": "Enable battery charging",
+      "socContextKey": "SOC context key",
+      "minSocContextKey": "Min SOC context key",
+      "batteryCapacity": "Capacity (kWh)",
+      "maxChargeRate": "Max charge (W)",
+      "socBuffer": "SOC buffer (%)"
     },
     "placeholder": {
       "name": "Name"
@@ -21,7 +27,8 @@
     "section": {
       "peak": "Peak Measurement",
       "limits": "Limits",
-      "electrical": "Electrical"
+      "electrical": "Electrical",
+      "battery": "Battery Charging"
     }
   }
 }

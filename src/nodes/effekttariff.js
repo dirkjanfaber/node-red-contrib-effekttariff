@@ -9,6 +9,7 @@ module.exports = function (RED) {
 
     // Build configuration from node settings
     const trackerConfig = peakTracker.mergeConfig({
+      // Peak tracking settings
       peakCount: parseInt(config.peakCount) || 3,
       onePeakPerDay: config.onePeakPerDay !== false,
       peakHoursStart: parseInt(config.peakHoursStart) || 7,
@@ -22,14 +23,24 @@ module.exports = function (RED) {
       headroomKw: parseFloat(config.headroom) || 0.3,
       phases: parseInt(config.phases) || 3,
       gridVoltage: parseInt(config.gridVoltage) || 230,
-      maxBreakerCurrent: parseInt(config.maxBreakerCurrent) || 25
+      maxBreakerCurrent: parseInt(config.maxBreakerCurrent) || 25,
+      // Battery charging settings (laddningsinställningar)
+      batteryEnabled: config.batteryEnabled || false,
+      socContextKey: config.socContextKey || 'battery.soc',
+      minSocContextKey: config.minSocContextKey || 'battery.minSoc',
+      batteryCapacityWh: parseFloat(config.batteryCapacity) * 1000 || 10000,
+      maxChargeRateW: parseFloat(config.maxChargeRate) || 3000,
+      socBuffer: parseFloat(config.socBuffer) || 20
     })
+
+    // Track last charge rate for change detection
+    let lastChargeRateW = null
 
     // Storage key for persistent state
     const storageKey = `effekttariff_${node.id}`
 
     // Load state from persistent storage
-    let state = node.context().flow.get(storageKey, 'file') || peakTracker.createInitialState()
+    const state = node.context().flow.get(storageKey, 'file') || peakTracker.createInitialState()
 
     // Track if this is first message since deploy
     let isFirstMessage = true
@@ -46,6 +57,24 @@ module.exports = function (RED) {
         // Process the measurement
         const result = peakTracker.processGridPower(state, trackerConfig, gridPowerW, now)
 
+        // Read battery state from global context if enabled
+        let batteryState = null
+        let batteryStatus = null
+        if (trackerConfig.batteryEnabled) {
+          const globalContext = node.context().global
+          const soc = globalContext.get(trackerConfig.socContextKey)
+          const minSoc = globalContext.get(trackerConfig.minSocContextKey)
+
+          if (typeof soc === 'number') {
+            batteryState = {
+              soc,
+              minSoc: typeof minSoc === 'number' ? minSoc : 20
+            }
+          }
+
+          batteryStatus = peakTracker.getBatteryStatus(trackerConfig, batteryState, now)
+        }
+
         // Log month reset
         if (result.monthReset) {
           node.warn(`Effekttariff: New month (${peakTracker.MONTH_NAMES[now.getMonth()]}) - reset ${result.previousPeakCount} peaks`)
@@ -59,8 +88,8 @@ module.exports = function (RED) {
         }
 
         // Update node status
-        const statusText = buildStatusText(result, trackerConfig)
-        const statusColor = getStatusColor(result)
+        const statusText = buildStatusText(result, trackerConfig, batteryStatus)
+        const statusColor = getStatusColor(result, batteryStatus)
         const statusShape = getStatusShape(result)
         node.status({ fill: statusColor, shape: statusShape, text: statusText })
 
@@ -68,37 +97,110 @@ module.exports = function (RED) {
         const shouldOutput = isFirstMessage || result.outputChanged
         isFirstMessage = false
 
+        // Determine if charge rate changed
+        const chargeRateChanged = batteryStatus && batteryStatus.chargeRateW !== lastChargeRateW
+
         // Output 1: Current limit (only when changed)
         const limitMsg = shouldOutput
           ? { payload: result.outputLimitA, topic: 'current_limit' }
           : null
 
         // Output 2: Status object
+        const statusPayload = {
+          timestamp: now.toISOString(),
+          inPeakSeason: result.inPeakSeason,
+          inPeakHours: result.inPeakHours,
+          isLearning: result.isLearning,
+          currentHour: result.currentHour,
+          currentHourAvgW: Math.round(result.currentHourAvgW),
+          currentHourAvgKw: result.currentHourAvgW / 1000,
+          targetLimitW: result.targetLimitW !== null ? Math.round(result.targetLimitW) : null,
+          targetLimitKw: result.targetLimitW !== null ? result.targetLimitW / 1000 : null,
+          outputLimitA: result.outputLimitA,
+          limitReason: result.limitReason,
+          peakAvgW: Math.round(result.peakAvgW),
+          peakAvgKw: result.peakAvgW / 1000,
+          peaksRecorded: result.topPeaks.length,
+          peaksNeeded: trackerConfig.peakCount,
+          topPeaks: result.topPeaks.map(p => ({
+            date: p.date,
+            hour: p.hour,
+            valueKw: Math.round(p.value) / 1000,
+            effectiveKw: Math.round(p.effective) / 1000
+          }))
+        }
+
+        // Add battery status to status payload if enabled
+        if (batteryStatus) {
+          statusPayload.battery = batteryStatus
+        }
+
         const statusMsg = {
-          payload: {
-            timestamp: now.toISOString(),
-            inPeakSeason: result.inPeakSeason,
-            inPeakHours: result.inPeakHours,
-            isLearning: result.isLearning,
-            currentHour: result.currentHour,
-            currentHourAvgW: Math.round(result.currentHourAvgW),
-            currentHourAvgKw: result.currentHourAvgW / 1000,
-            targetLimitW: result.targetLimitW !== null ? Math.round(result.targetLimitW) : null,
-            targetLimitKw: result.targetLimitW !== null ? result.targetLimitW / 1000 : null,
-            outputLimitA: result.outputLimitA,
-            limitReason: result.limitReason,
-            peakAvgW: Math.round(result.peakAvgW),
-            peakAvgKw: result.peakAvgW / 1000,
-            peaksRecorded: result.topPeaks.length,
-            peaksNeeded: trackerConfig.peakCount,
-            topPeaks: result.topPeaks.map(p => ({
-              date: p.date,
-              hour: p.hour,
-              valueKw: Math.round(p.value) / 1000,
-              effectiveKw: Math.round(p.effective) / 1000
-            }))
-          },
+          payload: statusPayload,
           topic: 'effekttariff_status'
+        }
+
+        // Output 3: Charge rate (only when changed and battery enabled)
+        let chargeMsg = null
+        if (trackerConfig.batteryEnabled && batteryStatus) {
+          if (chargeRateChanged || shouldOutput) {
+            chargeMsg = {
+              payload: batteryStatus.chargeRateW,
+              topic: 'charge_rate',
+              charging: batteryStatus.charging,
+              reason: batteryStatus.reason,
+              details: {
+                currentSoc: batteryStatus.currentSoc,
+                targetSoc: batteryStatus.targetSoc,
+                minSoc: batteryStatus.minSoc,
+                hoursUntilPeak: batteryStatus.hoursUntilPeak,
+                energyDeficitWh: batteryStatus.energyDeficitWh
+              }
+            }
+            lastChargeRateW = batteryStatus.chargeRateW
+          }
+        }
+
+        // Output 4: Chart data (FlowFuse Dashboard 2.0 format)
+        // Send array of messages for different series
+        const timestamp = now.getTime()
+        const chartMessages = []
+
+        // Consumption series
+        chartMessages.push({
+          topic: 'consumption',
+          payload: { x: timestamp, y: Math.round(result.currentHourAvgW) }
+        })
+
+        // Limit series (convert A to W for same scale)
+        const limitW = result.outputLimitA * trackerConfig.phases * trackerConfig.gridVoltage
+        chartMessages.push({
+          topic: 'limit',
+          payload: { x: timestamp, y: Math.round(limitW) }
+        })
+
+        // Target series (if not in learning phase)
+        if (result.targetLimitW !== null) {
+          chartMessages.push({
+            topic: 'target',
+            payload: { x: timestamp, y: Math.round(result.targetLimitW) }
+          })
+        }
+
+        // Peak average series
+        if (result.peakAvgW > 0) {
+          chartMessages.push({
+            topic: 'peak_avg',
+            payload: { x: timestamp, y: Math.round(result.peakAvgW) }
+          })
+        }
+
+        // Battery SOC series (if enabled and available)
+        if (batteryStatus && batteryStatus.available) {
+          chartMessages.push({
+            topic: 'battery_soc',
+            payload: { x: timestamp, y: batteryStatus.currentSoc }
+          })
         }
 
         // Update state if output changed
@@ -109,13 +211,14 @@ module.exports = function (RED) {
         // Save state periodically (every 5 minutes or on first sample of hour)
         const shouldSave = (Date.now() - (state.lastSave || 0) > 300000) ||
                           result.hourCompleted ||
-                          shouldOutput
+                          shouldOutput ||
+                          chargeRateChanged
         if (shouldSave) {
           state.lastSave = Date.now()
           node.context().flow.set(storageKey, state, 'file')
         }
 
-        send([limitMsg, statusMsg])
+        send([limitMsg, statusMsg, chargeMsg, chartMessages])
         done()
       } catch (err) {
         done(err)
@@ -132,23 +235,33 @@ module.exports = function (RED) {
   /**
    * Build status text for node display
    */
-  function buildStatusText (result, config) {
+  function buildStatusText (result, config, batteryStatus) {
     const currentKw = (result.currentHourAvgW / 1000).toFixed(1)
     const avgKw = (result.peakAvgW / 1000).toFixed(2)
     const targetKw = result.targetLimitW !== null
       ? (result.targetLimitW / 1000).toFixed(1)
       : '-'
 
+    // Battery charging suffix
+    let batterySuffix = ''
+    if (batteryStatus && batteryStatus.available) {
+      if (batteryStatus.charging) {
+        batterySuffix = ` | ⚡${(batteryStatus.chargeRateW / 1000).toFixed(1)}kW`
+      } else if (batteryStatus.inPeakHours) {
+        batterySuffix = ` | 🔋${batteryStatus.currentSoc}%`
+      }
+    }
+
     if (!result.inPeakSeason) {
-      return `Off-season | Avg: ${avgKw} kW | ${result.topPeaks.length} peaks`
+      return `Off-season | Avg: ${avgKw} kW | ${result.topPeaks.length} peaks${batterySuffix}`
     }
 
     if (!result.inPeakHours) {
-      return `Off-peak (until ${config.peakHoursStart}:00) | Avg: ${avgKw} kW | Grid: ${currentKw} kW`
+      return `Off-peak (until ${config.peakHoursStart}:00) | Grid: ${currentKw} kW${batterySuffix}`
     }
 
     if (result.isLearning) {
-      return `Learning (${result.topPeaks.length}/${config.peakCount}) | Grid: ${currentKw} kW | Limit: ${result.outputLimitA}A`
+      return `Learning (${result.topPeaks.length}/${config.peakCount}) | Grid: ${currentKw} kW | Limit: ${result.outputLimitA}A${batterySuffix}`
     }
 
     const pct = result.targetLimitW > 0
@@ -156,22 +269,26 @@ module.exports = function (RED) {
       : 0
 
     if (result.currentHourAvgW > result.targetLimitW * 1.05) {
-      return `⚠ OVER ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A`
+      return `⚠ OVER ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A${batterySuffix}`
     }
 
     if (result.currentHourAvgW > result.targetLimitW * 0.85) {
-      return `Peak: ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A`
+      return `Peak: ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A${batterySuffix}`
     }
 
-    return `Peak: ${currentKw}/${targetKw} kW | Limit: ${result.outputLimitA}A | Avg: ${avgKw} kW`
+    return `Peak: ${currentKw}/${targetKw} kW | Limit: ${result.outputLimitA}A | Avg: ${avgKw} kW${batterySuffix}`
   }
 
   /**
    * Get status color based on result
    */
-  function getStatusColor (result) {
+  function getStatusColor (result, batteryStatus) {
     if (!result.inPeakSeason) return 'grey'
-    if (!result.inPeakHours) return 'green'
+    if (!result.inPeakHours) {
+      // Show cyan when charging during off-peak
+      if (batteryStatus && batteryStatus.charging) return 'blue'
+      return 'green'
+    }
     if (result.isLearning) return 'blue'
 
     if (result.targetLimitW && result.currentHourAvgW > result.targetLimitW * 1.05) {

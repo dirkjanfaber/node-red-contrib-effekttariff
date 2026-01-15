@@ -319,4 +319,231 @@ describe('peak-tracker', () => {
       expect(result.hourCompleted.effectiveW).toBe(2000) // 50% of 4000
     })
   })
+
+  // ============================================================================
+  // Battery Charging Tests (Batteriladdningstester)
+  // ============================================================================
+
+  describe('calculateHoursUntilPeak', () => {
+    const config = peakTracker.mergeConfig({
+      peakSeasonOnly: false,
+      peakHoursStart: 7,
+      peakHoursEnd: 21,
+      weekdaysOnly: false
+    })
+
+    it('should calculate hours until peak when before peak hours', () => {
+      // 05:00 on a Monday -> 2 hours until peak at 07:00
+      const now = new Date('2024-01-15T05:00:00')
+      const hours = peakTracker.calculateHoursUntilPeak(now, config)
+
+      expect(hours).toBe(2)
+    })
+
+    it('should calculate hours until next day peak when after peak start', () => {
+      // 22:00 on Monday -> peak starts tomorrow at 07:00 = 9 hours
+      const now = new Date('2024-01-15T22:00:00')
+      const hours = peakTracker.calculateHoursUntilPeak(now, config)
+
+      expect(hours).toBe(9)
+    })
+
+    it('should account for minutes in calculation', () => {
+      // 05:30 -> 1.5 hours until peak at 07:00
+      const now = new Date('2024-01-15T05:30:00')
+      const hours = peakTracker.calculateHoursUntilPeak(now, config)
+
+      expect(hours).toBe(1.5)
+    })
+
+    it('should skip weekends when weekdaysOnly is true', () => {
+      const weekdayConfig = peakTracker.mergeConfig({
+        peakSeasonOnly: false,
+        peakHoursStart: 7,
+        peakHoursEnd: 21,
+        weekdaysOnly: true
+      })
+
+      // Saturday 10:00 -> Monday 07:00 = 45 hours (14 + 24 + 7)
+      const saturday = new Date('2024-01-13T10:00:00') // Saturday
+      const hours = peakTracker.calculateHoursUntilPeak(saturday, weekdayConfig)
+
+      expect(hours).toBe(45) // 14 hours to midnight + 24 hours Sunday + 7 hours Monday
+    })
+
+    it('should skip to Monday from Sunday when weekdaysOnly is true', () => {
+      const weekdayConfig = peakTracker.mergeConfig({
+        peakSeasonOnly: false,
+        peakHoursStart: 7,
+        peakHoursEnd: 21,
+        weekdaysOnly: true
+      })
+
+      // Sunday 10:00 -> Monday 07:00 = 21 hours (14 + 7)
+      const sunday = new Date('2024-01-14T10:00:00') // Sunday
+      const hours = peakTracker.calculateHoursUntilPeak(sunday, weekdayConfig)
+
+      expect(hours).toBe(21) // 14 hours to midnight + 7 hours Monday
+    })
+
+    it('should return large value when not in peak season', () => {
+      const seasonConfig = peakTracker.mergeConfig({
+        peakSeasonOnly: true,
+        peakSeasonStart: 11,
+        peakSeasonEnd: 3,
+        peakHoursStart: 7,
+        peakHoursEnd: 21
+      })
+
+      // July (month 7) is not in peak season (Nov-Mar)
+      const july = new Date('2024-07-15T10:00:00')
+      const hours = peakTracker.calculateHoursUntilPeak(july, seasonConfig)
+
+      expect(hours).toBe(24 * 7) // One week
+    })
+
+    it('should return minimum 0.5 hours', () => {
+      // At 06:55, only 5 minutes until peak
+      const now = new Date('2024-01-15T06:55:00')
+      const hours = peakTracker.calculateHoursUntilPeak(now, config)
+
+      expect(hours).toBeGreaterThanOrEqual(0.5)
+    })
+  })
+
+  describe('calculateChargeRate', () => {
+    const config = peakTracker.mergeConfig({
+      peakSeasonOnly: false,
+      peakHoursStart: 7,
+      peakHoursEnd: 21,
+      weekdaysOnly: false,
+      batteryEnabled: true,
+      batteryCapacityWh: 10000, // 10 kWh
+      maxChargeRateW: 3000,
+      socBuffer: 20
+    })
+
+    it('should calculate charge rate based on deficit and time to peak', () => {
+      const batteryState = { soc: 40, minSoc: 50 }
+      // Target SOC = 50 + 20 = 70%
+      // Deficit = 70 - 40 = 30%
+      // Energy needed = 30% * 10000 Wh = 3000 Wh
+      // At 05:00, 2 hours until peak at 07:00
+      // Charge rate = 3000 Wh / 2 h = 1500 W
+      const now = new Date('2024-01-15T05:00:00')
+      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+
+      expect(result.charging).toBe(true)
+      expect(result.chargeRateW).toBe(1500)
+      expect(result.targetSoc).toBe(70)
+      expect(result.currentSoc).toBe(40)
+    })
+
+    it('should cap charge rate at maximum', () => {
+      const batteryState = { soc: 30, minSoc: 50 }
+      // Target = 70%, Deficit = 40%, Energy = 4000 Wh
+      // At 06:00, 1 hour until peak
+      // Required = 4000 W, but max is 3000 W
+      const now = new Date('2024-01-15T06:00:00')
+      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+
+      expect(result.chargeRateW).toBe(3000) // Capped at max
+    })
+
+    it('should return zero charge rate when SOC is sufficient', () => {
+      const batteryState = { soc: 80, minSoc: 50 }
+      // Target = 70%, Current = 80% -> No charging needed
+      const now = new Date('2024-01-15T05:00:00')
+      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+
+      expect(result.charging).toBe(false)
+      expect(result.chargeRateW).toBe(0)
+      expect(result.reason).toBe('SOC sufficient')
+    })
+
+    it('should return zero charge rate during peak hours', () => {
+      const batteryState = { soc: 40, minSoc: 50 }
+      // During peak hours (10:00), should not charge
+      const now = new Date('2024-01-15T10:00:00')
+      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+
+      expect(result.charging).toBe(false)
+      expect(result.chargeRateW).toBe(0)
+      expect(result.reason).toContain('peak hours')
+      expect(result.inPeakHours).toBe(true)
+    })
+
+    it('should handle missing battery state gracefully', () => {
+      const now = new Date('2024-01-15T05:00:00')
+
+      const resultNull = peakTracker.calculateChargeRate(config, null, now)
+      expect(resultNull.charging).toBe(false)
+      expect(resultNull.reason).toBe('no battery data')
+
+      const resultUndefined = peakTracker.calculateChargeRate(config, undefined, now)
+      expect(resultUndefined.charging).toBe(false)
+
+      const resultInvalid = peakTracker.calculateChargeRate(config, { soc: 'invalid' }, now)
+      expect(resultInvalid.charging).toBe(false)
+    })
+
+    it('should use default minSoc when not provided', () => {
+      const batteryState = { soc: 30 } // No minSoc
+      const now = new Date('2024-01-15T05:00:00')
+      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+
+      // Default minSoc is 20, so target = 20 + 20 = 40%
+      expect(result.targetSoc).toBe(40)
+      expect(result.minSoc).toBe(20)
+    })
+
+    it('should cap target SOC at 100%', () => {
+      const batteryState = { soc: 70, minSoc: 90 }
+      // Target would be 90 + 20 = 110%, should cap at 100%
+      const now = new Date('2024-01-15T05:00:00')
+      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+
+      expect(result.targetSoc).toBe(100)
+    })
+  })
+
+  describe('getBatteryStatus', () => {
+    it('should return null when battery is disabled', () => {
+      const config = peakTracker.mergeConfig({ batteryEnabled: false })
+      const batteryState = { soc: 50, minSoc: 30 }
+      const now = new Date('2024-01-15T05:00:00')
+
+      const result = peakTracker.getBatteryStatus(config, batteryState, now)
+
+      expect(result).toBeNull()
+    })
+
+    it('should return battery status when enabled', () => {
+      const config = peakTracker.mergeConfig({
+        batteryEnabled: true,
+        batteryCapacityWh: 10000,
+        socBuffer: 20
+      })
+      const batteryState = { soc: 40, minSoc: 50 }
+      const now = new Date('2024-01-15T05:00:00')
+
+      const result = peakTracker.getBatteryStatus(config, batteryState, now)
+
+      expect(result).not.toBeNull()
+      expect(result.enabled).toBe(true)
+      expect(result.available).toBe(true)
+      expect(result.charging).toBe(true)
+      expect(result.chargeRateW).toBeGreaterThan(0)
+    })
+
+    it('should indicate when battery data is not available', () => {
+      const config = peakTracker.mergeConfig({ batteryEnabled: true })
+      const now = new Date('2024-01-15T05:00:00')
+
+      const result = peakTracker.getBatteryStatus(config, null, now)
+
+      expect(result.enabled).toBe(true)
+      expect(result.available).toBe(false)
+    })
+  })
 })

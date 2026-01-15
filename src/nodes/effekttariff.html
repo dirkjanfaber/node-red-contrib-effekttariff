@@ -17,17 +17,24 @@
       headroom: { value: 0.3, validate: RED.validators.number() },
       phases: { value: 3, validate: RED.validators.number() },
       gridVoltage: { value: 230, validate: RED.validators.number() },
-      maxBreakerCurrent: { value: 25, validate: RED.validators.number() }
+      maxBreakerCurrent: { value: 25, validate: RED.validators.number() },
+      // Battery charging settings
+      batteryEnabled: { value: false },
+      socContextKey: { value: 'battery.soc' },
+      minSocContextKey: { value: 'battery.minSoc' },
+      batteryCapacity: { value: 10, validate: RED.validators.number() },
+      maxChargeRate: { value: 3000, validate: RED.validators.number() },
+      socBuffer: { value: 20, validate: RED.validators.number() }
     },
     inputs: 1,
-    outputs: 2,
+    outputs: 4,
     icon: 'font-awesome/fa-bolt',
     label: function () {
       return this.name || 'Effekttariff'
     },
     paletteLabel: 'Effekttariff',
     inputLabels: ['Grid Power (W)'],
-    outputLabels: ['Current Limit (A)', 'Status'],
+    outputLabels: ['Current Limit (A)', 'Status', 'Charge Rate (W)', 'Chart Data'],
     oneditprepare: function () {
       // Season month dropdowns
       const months = [
@@ -64,6 +71,15 @@
 
       $('#node-input-peakSeasonOnly').on('change', toggleSeasonFields)
       toggleSeasonFields()
+
+      // Toggle battery fields visibility
+      function toggleBatteryFields () {
+        const show = $('#node-input-batteryEnabled').is(':checked')
+        $('.battery-row').toggle(show)
+      }
+
+      $('#node-input-batteryEnabled').on('change', toggleBatteryFields)
+      toggleBatteryFields()
     }
   })
 </script>
@@ -150,10 +166,44 @@
     <label for="node-input-maxBreakerCurrent"><i class="fa fa-exclamation-triangle"></i> <span data-i18n="effekttariff.label.maxBreakerCurrent">Max breaker (A)</span></label>
     <input type="number" id="node-input-maxBreakerCurrent" min="10" max="63" style="width:80px">
   </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.battery">Battery Charging</h4>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-batteryEnabled" style="width:auto; margin-right:5px">
+    <label for="node-input-batteryEnabled" style="width:auto" data-i18n="effekttariff.label.batteryEnabled">Enable battery charging</label>
+  </div>
+
+  <div class="form-row battery-row">
+    <label for="node-input-socContextKey"><i class="fa fa-database"></i> <span data-i18n="effekttariff.label.socContextKey">SOC context key</span></label>
+    <input type="text" id="node-input-socContextKey" style="width:200px" placeholder="battery.soc">
+  </div>
+
+  <div class="form-row battery-row">
+    <label for="node-input-minSocContextKey"><i class="fa fa-database"></i> <span data-i18n="effekttariff.label.minSocContextKey">Min SOC context key</span></label>
+    <input type="text" id="node-input-minSocContextKey" style="width:200px" placeholder="battery.minSoc">
+  </div>
+
+  <div class="form-row battery-row">
+    <label for="node-input-batteryCapacity"><i class="fa fa-battery-full"></i> <span data-i18n="effekttariff.label.batteryCapacity">Capacity (kWh)</span></label>
+    <input type="number" id="node-input-batteryCapacity" min="1" max="100" step="0.5" style="width:80px">
+  </div>
+
+  <div class="form-row battery-row">
+    <label for="node-input-maxChargeRate"><i class="fa fa-bolt"></i> <span data-i18n="effekttariff.label.maxChargeRate">Max charge (W)</span></label>
+    <input type="number" id="node-input-maxChargeRate" min="500" max="20000" step="100" style="width:100px">
+  </div>
+
+  <div class="form-row battery-row">
+    <label for="node-input-socBuffer"><i class="fa fa-plus-circle"></i> <span data-i18n="effekttariff.label.socBuffer">SOC buffer (%)</span></label>
+    <input type="number" id="node-input-socBuffer" min="5" max="50" style="width:80px">
+  </div>
 </script>
 
 <script type="text/html" data-help-name="effekttariff">
-  <p>Swedish effekttariff (power tariff) peak shaving controller.</p>
+  <p>Swedish effekttariff (power tariff) peak shaving controller with optional battery charging.</p>
 
   <h3>Input</h3>
   <dl class="message-properties">
@@ -172,7 +222,25 @@
     <li>Status
       <dl class="message-properties">
         <dt>payload <span class="property-type">object</span></dt>
-        <dd>Status object with peak data for debugging/dashboard</dd>
+        <dd>Status object with peak data and battery status for debugging/dashboard</dd>
+      </dl>
+    </li>
+    <li>Charge Rate (when battery enabled)
+      <dl class="message-properties">
+        <dt>payload <span class="property-type">number</span></dt>
+        <dd>Recommended charge rate in Watts. Only outputs when value changes.</dd>
+        <dt>charging <span class="property-type">boolean</span></dt>
+        <dd>Whether charging is recommended</dd>
+        <dt>reason <span class="property-type">string</span></dt>
+        <dd>Explanation of charge decision</dd>
+        <dt>details <span class="property-type">object</span></dt>
+        <dd>Contains currentSoc, targetSoc, minSoc, hoursUntilPeak, energyDeficitWh</dd>
+      </dl>
+    </li>
+    <li>Chart Data (for FlowFuse Dashboard)
+      <dl class="message-properties">
+        <dt>payload <span class="property-type">array</span></dt>
+        <dd>Array of chart-ready messages for ui-chart node. Each message has topic (series name) and payload with x (timestamp) and y (value). Series: consumption, limit, target, peak_avg, battery_soc.</dd>
       </dl>
     </li>
   </ol>
@@ -194,11 +262,25 @@
   recorded enough peaks. During learning, it outputs the minimum limit to
   prevent establishing unnecessarily high peaks.</p>
 
+  <h4>Battery Charging</h4>
+  <p>When battery charging is enabled, the node reads SOC from global context
+  and calculates the optimal charge rate to ensure the battery is charged
+  before peak hours begin.</p>
+
+  <p>The charging algorithm:</p>
+  <ul>
+    <li>Target SOC = min SOC + buffer (e.g., 50% + 20% = 70%)</li>
+    <li>Charges during off-peak hours only</li>
+    <li>Calculates charge rate based on energy deficit and time until peak</li>
+    <li>Respects maximum charge rate limit</li>
+    <li>Outputs 0W during peak hours (discharge for peak shaving)</li>
+  </ul>
+
   <h4>Status Indicator</h4>
   <ul>
     <li><b>Grey ring</b>: Off-season</li>
     <li><b>Green ring</b>: Off-peak hours</li>
-    <li><b>Blue ring</b>: Learning phase</li>
+    <li><b>Blue ring</b>: Learning phase or charging</li>
     <li><b>Blue dot</b>: Peak hours, usage below target</li>
     <li><b>Yellow dot</b>: Approaching target (&gt;85%)</li>
     <li><b>Red dot</b>: Over target (&gt;105%)</li>
