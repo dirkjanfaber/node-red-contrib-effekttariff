@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battery Sizing Tool - Effekttariff Peak Shaving</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 5px 0;
+      color: #1a1a1a;
+    }
+    .subtitle {
+      color: #666;
+      margin: 0 0 20px 0;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .panel h2 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .control-group {
+      margin-bottom: 18px;
+    }
+    .control-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #555;
+    }
+    .control-group .value {
+      float: right;
+      font-weight: 600;
+      color: #2563eb;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e0e0e0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #2563eb;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .result-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+    .result-card.highlight {
+      background: #dbeafe;
+      border: 2px solid #2563eb;
+    }
+    .result-card .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .result-card .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+    .result-card.highlight .value {
+      color: #2563eb;
+    }
+    .result-card .unit {
+      font-size: 14px;
+      color: #666;
+    }
+    .chart-container {
+      margin-bottom: 20px;
+    }
+    .chart-container h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    canvas {
+      max-height: 250px;
+    }
+    .info-box {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      margin-top: 15px;
+    }
+    .info-box strong {
+      color: #92400e;
+    }
+    .toggle-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .toggle-btn.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 600;
+    }
+    .section-divider {
+      border-top: 1px solid #eee;
+      margin: 20px 0;
+      padding-top: 15px;
+    }
+    .comparison-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .bar-label {
+      width: 100px;
+      font-size: 12px;
+      color: #666;
+    }
+    .bar-container {
+      flex: 1;
+      height: 24px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .bar-fill.without { background: #ef4444; }
+    .bar-fill.with { background: #22c55e; }
+    .bar-value {
+      width: 70px;
+      text-align: right;
+      font-weight: 600;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Battery Sizing Tool</h1>
+    <p class="subtitle">Simulate how a battery can reduce your effekttariff peaks</p>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>Battery Settings</h2>
+
+        <div class="control-group">
+          <label>Battery Capacity <span class="value" id="capacityValue">10 kWh</span></label>
+          <input type="range" id="capacity" min="5" max="50" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+          <label>Min SOC (reserve) <span class="value" id="minSocValue">10%</span></label>
+          <input type="range" id="minSoc" min="5" max="30" step="5" value="10">
+        </div>
+
+        <div class="control-group">
+          <label>Charge to (%) <span class="value" id="targetSocValue">90%</span></label>
+          <input type="range" id="targetSoc" min="50" max="100" step="5" value="90">
+          <small style="color:#888; font-size:11px;">Target SOC before peak hours start</small>
+        </div>
+
+        <div class="control-group">
+          <label>Max Charge/Discharge Rate <span class="value" id="maxRateValue">5 kW</span></label>
+          <input type="range" id="maxRate" min="1" max="15" step="0.5" value="5">
+        </div>
+
+        <div class="section-divider">
+          <h2 style="border:none; padding:0;">Consumption Profile</h2>
+        </div>
+
+        <div class="control-group">
+          <label>Profile Type</label>
+          <select id="profile">
+            <option value="typical">Typical Swedish Household</option>
+            <option value="ev">Household + EV Charging</option>
+            <option value="heatpump">Household + Heat Pump</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div id="customInputs" style="display: none;">
+          <div class="control-group">
+            <label>Base Load <span class="value" id="baseLoadValue">1.5 kW</span></label>
+            <input type="range" id="baseLoad" min="0.5" max="5" step="0.1" value="1.5">
+          </div>
+          <div class="control-group">
+            <label>Peak Load <span class="value" id="peakLoadValue">4 kW</span></label>
+            <input type="range" id="peakLoad" min="2" max="15" step="0.5" value="4">
+          </div>
+        </div>
+
+        <div class="section-divider">
+          <h2 style="border:none; padding:0;">Provider Settings</h2>
+        </div>
+
+        <div class="control-group">
+          <label>Peak Hours</label>
+          <select id="peakHours">
+            <option value="7-21">07:00 - 21:00 (Kungälv Energi)</option>
+            <option value="7-19">07:00 - 19:00 (Ellevio)</option>
+            <option value="6-22">06:00 - 22:00 (Extended)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>Number of Peaks <span class="value" id="peakCountValue">3</span></label>
+          <input type="range" id="peakCount" min="2" max="5" step="1" value="3">
+        </div>
+
+        <div class="section-divider">
+          <h2 style="border:none; padding:0;">Electrical Installation</h2>
+        </div>
+
+        <div class="control-group">
+          <label>Number of Phases</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" data-phases="1" id="phase1">1-phase</button>
+            <button class="toggle-btn active" data-phases="3" id="phase3">3-phase</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Main Breaker <span class="value" id="breakerValue">25 A</span></label>
+          <input type="range" id="breaker" min="16" max="35" step="1" value="25">
+          <small style="color:#888; font-size:11px;">Max capacity: <span id="maxCapacity">17.3 kW</span></small>
+        </div>
+
+        <div class="control-group">
+          <label>Minimum Limit <span class="value" id="minLimitValue">2 kW</span></label>
+          <input type="range" id="minLimit" min="1" max="6" step="0.5" value="2">
+        </div>
+
+        <div class="info-box">
+          <strong>Usable Capacity:</strong> <span id="usableCapacity">8.0 kWh</span><br>
+          <small>Based on Target SOC - Min SOC</small>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <h2>Results - 7 Day Simulation</h2>
+
+          <div class="results-grid">
+            <div class="result-card">
+              <div class="label">Without Battery</div>
+              <div class="value" id="peakWithout">-</div>
+              <div class="unit">kW peak avg</div>
+            </div>
+            <div class="result-card">
+              <div class="label">With Battery</div>
+              <div class="value" id="peakWith">-</div>
+              <div class="unit">kW peak avg</div>
+            </div>
+            <div class="result-card highlight">
+              <div class="label">Reduction</div>
+              <div class="value" id="reduction">-</div>
+              <div class="unit">%</div>
+            </div>
+          </div>
+
+          <div class="comparison-bar">
+            <div class="bar-label">Without Battery</div>
+            <div class="bar-container">
+              <div class="bar-fill without" id="barWithout" style="width: 0%"></div>
+            </div>
+            <div class="bar-value" id="barValueWithout">-</div>
+          </div>
+          <div class="comparison-bar">
+            <div class="bar-label">With Battery</div>
+            <div class="bar-container">
+              <div class="bar-fill with" id="barWith" style="width: 0%"></div>
+            </div>
+            <div class="bar-value" id="barValueWith">-</div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 20px;">
+          <div class="chart-container">
+            <h3>Grid Consumption with Battery (Day 4)</h3>
+            <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">
+              Blue = power drawn from grid after battery discharge. Red = limit (lower during peak hours).
+            </p>
+            <canvas id="powerChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 20px;">
+          <div class="chart-container">
+            <h3>Battery State of Charge (Day 4)</h3>
+            <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">
+              Battery charges overnight and discharges during peak hours to reduce grid consumption.
+            </p>
+            <canvas id="socChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Consumption profiles
+    const profiles = {
+      typical: { base: 1500, peak: 3500, name: 'Typical Swedish Household' },
+      ev: { base: 2000, peak: 8000, name: 'Household + EV Charging' },
+      heatpump: { base: 2500, peak: 6000, name: 'Household + Heat Pump' },
+      custom: { base: 1500, peak: 4000, name: 'Custom' }
+    };
+
+    // Daily consumption pattern (Swedish household)
+    function getDailyPattern(hour, baseW, peakW) {
+      if (hour >= 0 && hour < 6) return baseW * 0.5;      // Night
+      if (hour >= 6 && hour < 9) return baseW + (peakW - baseW) * 0.75;  // Morning peak
+      if (hour >= 9 && hour < 17) return baseW * 0.8;     // Day
+      if (hour >= 17 && hour < 21) return peakW;          // Evening peak
+      return baseW * 0.6;                                  // Late evening
+    }
+
+    // Run simulation
+    function runSimulation(config) {
+      const {
+        batteryCapacityWh,
+        minSoc,
+        targetSoc,
+        maxRateW,
+        baseW,
+        peakW,
+        peakHoursStart,
+        peakHoursEnd,
+        peakCount,
+        minimumLimitW,
+        batteryEnabled
+      } = config;
+
+      const durationDays = 7;
+      const samplesPerHour = 6;
+      const intervalHours = 1 / samplesPerHour;
+      const totalSamples = durationDays * 24 * samplesPerHour;
+
+      let currentSoc = batteryEnabled ? targetSoc : 0;
+      const peaks = [];
+      const hourlyData = [];
+      const socData = [];
+
+      let currentHour = -1;
+      let hourSum = 0;
+      let hourSamples = 0;
+      let currentMonth = 2; // February
+
+      for (let i = 0; i < totalSamples; i++) {
+        const totalHours = i / samplesPerHour;
+        const hour = Math.floor(totalHours) % 24;
+        const day = Math.floor(totalHours / 24);
+
+        // Generate raw power
+        const rawPower = getDailyPattern(hour, baseW, peakW);
+
+        // Determine if in peak hours
+        const inPeakHours = hour >= peakHoursStart && hour < peakHoursEnd;
+
+        // Battery simulation
+        let effectivePower = rawPower;
+        let socChange = 0;
+
+        if (batteryEnabled) {
+          if (inPeakHours) {
+            // Discharge to minimize grid consumption
+            const excessPower = rawPower - minimumLimitW;
+            if (excessPower > 0 && currentSoc > minSoc) {
+              const availableEnergyWh = (currentSoc - minSoc) / 100 * batteryCapacityWh;
+              const maxDischarge = Math.min(maxRateW, availableEnergyWh / intervalHours, excessPower);
+              const discharge = Math.max(0, maxDischarge);
+              const energyWh = discharge * intervalHours;
+              socChange = -(energyWh / batteryCapacityWh) * 100;
+              effectivePower = Math.max(0, rawPower - discharge);
+            }
+          } else {
+            // Charge during off-peak
+            if (currentSoc < targetSoc) {
+              let hoursUntilPeak = peakHoursStart - hour;
+              if (hoursUntilPeak <= 0) hoursUntilPeak += 24;
+              const energyDeficitWh = (targetSoc - currentSoc) / 100 * batteryCapacityWh;
+              const requiredRate = energyDeficitWh / hoursUntilPeak;
+              const chargeRate = Math.min(maxRateW, Math.max(0, requiredRate));
+              const energyWh = chargeRate * intervalHours;
+              socChange = (energyWh / batteryCapacityWh) * 100;
+            }
+          }
+          currentSoc = Math.max(minSoc, Math.min(100, currentSoc + socChange));
+        }
+
+        // Track hourly data
+        if (hour !== currentHour && currentHour !== -1 && hourSamples > 0) {
+          const avgW = hourSum / hourSamples;
+          hourlyData.push({ hour: currentHour, avgW, day: Math.floor((i - 1) / samplesPerHour / 24) });
+
+          // Record peak if in peak hours
+          const wasInPeakHours = currentHour >= peakHoursStart && currentHour < peakHoursEnd;
+          if (wasInPeakHours) {
+            const peakDay = hourlyData[hourlyData.length - 1].day;
+            const existingIdx = peaks.findIndex(p => p.day === peakDay);
+            if (existingIdx >= 0) {
+              if (avgW > peaks[existingIdx].avgW) {
+                peaks[existingIdx] = { day: peakDay, hour: currentHour, avgW };
+              }
+            } else {
+              peaks.push({ day: peakDay, hour: currentHour, avgW });
+            }
+          }
+        }
+
+        if (hour !== currentHour) {
+          currentHour = hour;
+          hourSum = 0;
+          hourSamples = 0;
+        }
+
+        hourSum += effectivePower;
+        hourSamples++;
+
+        // Track SOC for day 4 (record at end of each hour, before currentHour update)
+        if (day === 3) {
+          // Record SOC at each sample for smooth curve
+          const existingSoc = socData.find(s => s.hour === hour);
+          if (!existingSoc) {
+            socData.push({ hour, soc: currentSoc });
+          } else {
+            // Update with latest SOC for this hour
+            existingSoc.soc = currentSoc;
+          }
+        }
+      }
+
+      // Calculate peak average
+      peaks.sort((a, b) => b.avgW - a.avgW);
+      const topPeaks = peaks.slice(0, peakCount);
+      const peakAvgW = topPeaks.length > 0
+        ? topPeaks.reduce((sum, p) => sum + p.avgW, 0) / topPeaks.length
+        : 0;
+
+      // Get day 4 data for charts
+      const day4Data = hourlyData.filter(h => h.day === 3);
+
+      return {
+        peakAvgKw: peakAvgW / 1000,
+        topPeaks,
+        day4Data,
+        socData: batteryEnabled ? socData : []
+      };
+    }
+
+    // Charts
+    let powerChart, socChart;
+
+    function initCharts() {
+      const powerCtx = document.getElementById('powerChart').getContext('2d');
+      powerChart = new Chart(powerCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+          datasets: [
+            {
+              label: 'Grid consumption (with battery)',
+              data: [],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Power limit',
+              data: [],
+              borderColor: '#ef4444',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              stepped: true,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { intersect: false, mode: 'index' },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Power (W)' } }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${(ctx.parsed.y / 1000).toFixed(2)} kW`
+              }
+            }
+          }
+        }
+      });
+
+      const socCtx = document.getElementById('socChart').getContext('2d');
+      socChart = new Chart(socCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+          datasets: [{
+            label: 'Battery charge level',
+            data: [],
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { min: 0, max: 100, title: { display: true, text: 'State of Charge (%)' } }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => `SOC: ${ctx.parsed.y?.toFixed(1) || 0}%`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateCharts(resultsWith, config) {
+      // Calculate max breaker capacity for limit line
+      const maxBreakerW = config.breakerA * config.phases * 230;
+
+      // Update power chart
+      const consumptionData = resultsWith.day4Data.map(d => d.avgW);
+      const limitData = Array.from({ length: 24 }, (_, hour) => {
+        const inPeak = hour >= config.peakHoursStart && hour < config.peakHoursEnd;
+        // During peak hours, show the target limit (minLimit + headroom from peaks)
+        // Outside peak hours, show max breaker capacity (no limit enforced)
+        return inPeak ? config.minimumLimitW : maxBreakerW;
+      });
+
+      powerChart.data.datasets[0].data = consumptionData;
+      powerChart.data.datasets[1].data = limitData;
+      powerChart.update();
+
+      // Update SOC chart
+      if (resultsWith.socData.length > 0) {
+        // Sort by hour and ensure we have all 24 hours
+        const sortedSoc = resultsWith.socData.sort((a, b) => a.hour - b.hour);
+        const socValues = Array(24).fill(null);
+        sortedSoc.forEach(d => {
+          socValues[d.hour] = d.soc;
+        });
+        // Fill gaps with interpolation
+        for (let i = 0; i < 24; i++) {
+          if (socValues[i] === null) {
+            // Find nearest values
+            let prev = i - 1;
+            while (prev >= 0 && socValues[prev] === null) prev--;
+            let next = i + 1;
+            while (next < 24 && socValues[next] === null) next++;
+            if (prev >= 0 && next < 24) {
+              socValues[i] = (socValues[prev] + socValues[next]) / 2;
+            } else if (prev >= 0) {
+              socValues[i] = socValues[prev];
+            } else if (next < 24) {
+              socValues[i] = socValues[next];
+            }
+          }
+        }
+        socChart.data.datasets[0].data = socValues;
+        socChart.update();
+      } else {
+        // Clear SOC chart if no battery
+        socChart.data.datasets[0].data = [];
+        socChart.update();
+      }
+    }
+
+    function updateResults() {
+      // Get values from inputs
+      const capacity = parseFloat(document.getElementById('capacity').value);
+      const minSoc = parseFloat(document.getElementById('minSoc').value);
+      const targetSoc = parseFloat(document.getElementById('targetSoc').value);
+      const maxRate = parseFloat(document.getElementById('maxRate').value);
+      const peakCount = parseInt(document.getElementById('peakCount').value);
+      const minLimit = parseFloat(document.getElementById('minLimit').value);
+      const breakerA = parseInt(document.getElementById('breaker').value);
+      const phases = document.querySelector('.toggle-btn.active[data-phases]')?.dataset.phases || 3;
+
+      const profileId = document.getElementById('profile').value;
+      let baseW, peakW;
+      if (profileId === 'custom') {
+        baseW = parseFloat(document.getElementById('baseLoad').value) * 1000;
+        peakW = parseFloat(document.getElementById('peakLoad').value) * 1000;
+      } else {
+        baseW = profiles[profileId].base;
+        peakW = profiles[profileId].peak;
+      }
+
+      const peakHoursStr = document.getElementById('peakHours').value;
+      const [peakHoursStart, peakHoursEnd] = peakHoursStr.split('-').map(Number);
+
+      // Update display values
+      document.getElementById('capacityValue').textContent = `${capacity} kWh`;
+      document.getElementById('minSocValue').textContent = `${minSoc}%`;
+      document.getElementById('targetSocValue').textContent = `${targetSoc}%`;
+      document.getElementById('maxRateValue').textContent = `${maxRate} kW`;
+      document.getElementById('peakCountValue').textContent = peakCount;
+      document.getElementById('minLimitValue').textContent = `${minLimit} kW`;
+      document.getElementById('baseLoadValue').textContent = `${(baseW / 1000).toFixed(1)} kW`;
+      document.getElementById('peakLoadValue').textContent = `${(peakW / 1000).toFixed(1)} kW`;
+      document.getElementById('breakerValue').textContent = `${breakerA} A`;
+      const maxCapacityKw = (breakerA * parseInt(phases) * 230) / 1000;
+      document.getElementById('maxCapacity').textContent = `${maxCapacityKw.toFixed(1)} kW`;
+
+      const usableCapacity = (targetSoc - minSoc) / 100 * capacity;
+      document.getElementById('usableCapacity').textContent = `${usableCapacity.toFixed(1)} kWh`;
+
+      // Run simulations
+      const config = {
+        batteryCapacityWh: capacity * 1000,
+        minSoc,
+        targetSoc,
+        maxRateW: maxRate * 1000,
+        baseW,
+        peakW,
+        peakHoursStart,
+        peakHoursEnd,
+        peakCount,
+        minimumLimitW: minLimit * 1000,
+        breakerA: parseInt(breakerA),
+        phases: parseInt(phases)
+      };
+
+      const resultsWithout = runSimulation({ ...config, batteryEnabled: false });
+      const resultsWith = runSimulation({ ...config, batteryEnabled: true });
+
+      // Update results display
+      const peakWithout = resultsWithout.peakAvgKw;
+      const peakWith = resultsWith.peakAvgKw;
+      const reduction = peakWithout > 0 ? ((peakWithout - peakWith) / peakWithout * 100) : 0;
+
+      document.getElementById('peakWithout').textContent = peakWithout.toFixed(2);
+      document.getElementById('peakWith').textContent = peakWith.toFixed(2);
+      document.getElementById('reduction').textContent = reduction.toFixed(0);
+
+      // Update comparison bars
+      const maxPeak = Math.max(peakWithout, peakWith, 1);
+      document.getElementById('barWithout').style.width = `${(peakWithout / maxPeak) * 100}%`;
+      document.getElementById('barWith').style.width = `${(peakWith / maxPeak) * 100}%`;
+      document.getElementById('barValueWithout').textContent = `${peakWithout.toFixed(2)} kW`;
+      document.getElementById('barValueWith').textContent = `${peakWith.toFixed(2)} kW`;
+
+      // Update charts
+      updateCharts(resultsWith, config);
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      initCharts();
+
+      // Add listeners to all inputs
+      const inputs = ['capacity', 'minSoc', 'targetSoc', 'maxRate', 'peakCount', 'minLimit', 'baseLoad', 'peakLoad', 'breaker'];
+      inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', updateResults);
+      });
+
+      // Phase toggle buttons
+      document.querySelectorAll('.toggle-btn[data-phases]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.toggle-btn[data-phases]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          updateResults();
+        });
+      });
+
+      document.getElementById('profile').addEventListener('change', (e) => {
+        const customInputs = document.getElementById('customInputs');
+        if (e.target.value === 'custom') {
+          customInputs.style.display = 'block';
+        } else {
+          customInputs.style.display = 'none';
+          // Update custom inputs to profile values
+          const profile = profiles[e.target.value];
+          document.getElementById('baseLoad').value = profile.base / 1000;
+          document.getElementById('peakLoad').value = profile.peak / 1000;
+        }
+        updateResults();
+      });
+
+      document.getElementById('peakHours').addEventListener('change', updateResults);
+
+      // Initial run
+      updateResults();
+    });
+  </script>
+</body>
+</html>
