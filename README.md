@@ -11,6 +11,8 @@ Swedish electricity providers charge a monthly "effektavgift" (power fee) based 
 3. Outputting a current limit (in Amperes) to keep new peaks below existing ones
 4. Automatically resetting on the 1st of each month
 
+> **Disclaimer:** The peak reduction estimates provided by this node and its tools are theoretical. Actual savings depend on many factors including your consumption patterns, equipment response times, battery efficiency, and grid conditions. Results may vary from simulated values.
+
 ## Installation
 
 ```bash
@@ -116,6 +118,21 @@ Example at 230V: 4 kW = 17.4A (1-phase) or 5.8A (3-phase)
 | Ellevio | 3 | 07-19 | Nov-Mar | No | Yes |
 | Kungälv Energi | 3 | 07-21 | Nov-Mar | Yes | Yes |
 | Jönköping Energi | 2 | 07-21 | All year | No | No |
+
+## Battery Sizing Tool
+
+An interactive web-based tool is available to help you understand how a battery can reduce your effekttariff peaks. The tool simulates different battery configurations and consumption profiles to estimate potential savings.
+
+**[Try the Battery Sizing Tool](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/refs/heads/main/tools/battery-sizing.html)** (English/Swedish)
+
+Features:
+- Adjust battery capacity, charge rates, and SOC settings
+- Choose from predefined consumption profiles (typical household, EV charging, heat pump)
+- Configure your grid provider's peak hours and peak count
+- Set your electrical installation (phases, breaker size)
+- View simulated peak reduction with interactive charts
+
+> **Note:** The simulation results are theoretical estimates based on simplified consumption patterns. Actual savings depend on your real consumption behavior, battery efficiency, grid conditions, and other factors. Use the tool for guidance and planning purposes only.
 
 ## Simulation & Testing
 
