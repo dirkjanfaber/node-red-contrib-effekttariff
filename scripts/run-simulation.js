@@ -43,10 +43,12 @@ function parseConfigOverrides () {
       const configMap = {
         // Battery settings
         batteryCapacity: { target: 'config', key: 'batteryCapacityWh', transform: v => v * 1000 },
-        minSoc: { target: 'config', key: 'minSoc', transform: v => v }, // For battery generator
+        minSoc: { target: 'config', key: 'minSoc' },
         socBuffer: { target: 'config', key: 'socBuffer' },
         maxChargeRate: { target: 'config', key: 'maxChargeRateW' },
+        maxDischargeRate: { target: 'config', key: 'maxDischargeRateW' },
         batteryEnabled: { target: 'config', key: 'batteryEnabled', transform: v => v === 'true' || v === true || v === 1 },
+        initialSoc: { target: 'simulation', key: 'initialSoc' },
         // Peak settings
         peakCount: { target: 'config', key: 'peakCount' },
         peakHoursStart: { target: 'config', key: 'peakHoursStart' },
@@ -62,10 +64,6 @@ function parseConfigOverrides () {
       if (mapping) {
         const transformed = mapping.transform ? mapping.transform(finalValue) : finalValue
         overrides[mapping.target][mapping.key] = transformed
-        // Also store minSoc for battery generator override
-        if (key === 'minSoc') {
-          overrides.minSoc = finalValue
-        }
       }
     }
   })
@@ -129,9 +127,11 @@ ${colorize('Config Overrides:', 'cyan')}
 ${colorize('Battery Overrides:', 'cyan')}
   --batteryEnabled=true Enable battery simulation
   --batteryCapacity=N   Battery capacity in kWh
-  --minSoc=N            Minimum SOC percentage
-  --socBuffer=N         SOC buffer percentage
+  --initialSoc=N        Initial SOC percentage (default: minSoc + socBuffer)
+  --minSoc=N            Minimum SOC percentage (discharge stops here)
+  --socBuffer=N         SOC buffer percentage (target = minSoc + buffer)
   --maxChargeRate=N     Max charge rate in Watts
+  --maxDischargeRate=N  Max discharge rate in Watts (default: same as charge)
 
 ${colorize('Examples:', 'cyan')}
   node scripts/run-simulation.js basicWeek
@@ -139,11 +139,12 @@ ${colorize('Examples:', 'cyan')}
   node scripts/run-simulation.js nightDiscount -v
   node scripts/run-simulation.js basicWeek --html --csv
   node scripts/run-simulation.js batteryCharging --html --batteryCapacity=15 --minSoc=30
+  node scripts/run-simulation.js batteryCharging --html --initialSoc=50 --maxDischargeRate=5000
 `)
 }
 
 function runSingleScenario (key, scenarioConfig, overrides = {}) {
-  const { name, description, config, startDate, durationDays, powerGenerator, batteryGenerator, expectations } = scenarioConfig
+  const { name, description, config, startDate, durationDays, powerGenerator, expectations } = scenarioConfig
 
   // Merge config overrides
   const mergedConfig = { ...config, ...overrides.config }
@@ -151,13 +152,7 @@ function runSingleScenario (key, scenarioConfig, overrides = {}) {
   // Apply simulation overrides
   const finalDuration = overrides.simulation.durationDays || durationDays
   const finalSamplesPerHour = overrides.simulation.samplesPerHour || 6
-
-  // Create battery generator with overridden minSoc if provided
-  let finalBatteryGenerator = batteryGenerator
-  if (overrides.minSoc !== undefined && batteryGenerator) {
-    const { batteryPatterns } = require('../lib/simulation')
-    finalBatteryGenerator = batteryPatterns.dailyCycle(overrides.minSoc)
-  }
+  const initialSoc = overrides.simulation.initialSoc
 
   // Show overrides in output
   const hasOverrides = Object.keys(overrides.config).length > 0 || Object.keys(overrides.simulation).length > 0
@@ -176,7 +171,7 @@ function runSingleScenario (key, scenarioConfig, overrides = {}) {
     startDate,
     durationDays: finalDuration,
     powerGenerator,
-    batteryGenerator: finalBatteryGenerator,
+    initialSoc,
     verbose,
     samplesPerHour: finalSamplesPerHour
   })
