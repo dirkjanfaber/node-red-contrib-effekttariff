@@ -1,6 +1,7 @@
 'use strict'
 
 const peakTracker = require('../../lib/peak-tracker')
+const forecasting = require('../../lib/forecasting')
 
 module.exports = function (RED) {
   function EffekttariffNode (config) {
@@ -30,7 +31,17 @@ module.exports = function (RED) {
       minSocContextKey: config.minSocContextKey || 'battery.minSoc',
       batteryCapacityWh: parseFloat(config.batteryCapacity) * 1000 || 10000,
       maxChargeRateW: parseFloat(config.maxChargeRate) || 3000,
-      socBuffer: parseFloat(config.socBuffer) || 20
+      socBuffer: parseFloat(config.socBuffer) || 20,
+      // Forecasting settings (prognosinställningar)
+      forecastSource: config.forecastSource || 'none',
+      forecastContextKey: config.forecastContextKey || 'forecast',
+      morningPeakStart: parseInt(config.morningPeakStart) || 6,
+      morningPeakEnd: parseInt(config.morningPeakEnd) || 9,
+      morningPeakWeight: parseFloat(config.morningPeakWeight) || 0.3,
+      eveningPeakStart: parseInt(config.eveningPeakStart) || 17,
+      eveningPeakEnd: parseInt(config.eveningPeakEnd) || 21,
+      eveningPeakWeight: parseFloat(config.eveningPeakWeight) || 1.0,
+      budgetBuffer: parseFloat(config.budgetBuffer) || 20
     })
 
     // Track last charge rate for change detection
@@ -60,6 +71,9 @@ module.exports = function (RED) {
         // Read battery state from global context if enabled
         let batteryState = null
         let batteryStatus = null
+        let forecastInfo = null
+        let dischargeInfo = null
+
         if (trackerConfig.batteryEnabled) {
           const globalContext = node.context().global
           const soc = globalContext.get(trackerConfig.socContextKey)
@@ -73,6 +87,62 @@ module.exports = function (RED) {
           }
 
           batteryStatus = peakTracker.getBatteryStatus(trackerConfig, batteryState, now)
+
+          // Handle forecasting for budget-based discharge
+          if (trackerConfig.forecastSource !== 'none') {
+            // Check if forecast needs regeneration (daily reset)
+            if (forecasting.shouldRegenerateForecast(state, now)) {
+              forecasting.resetDailyTracking(state, now)
+            }
+
+            // Get external forecast if configured
+            let externalForecast = null
+            if (trackerConfig.forecastSource === 'external') {
+              // Try msg.forecast first, then context
+              externalForecast = msg.forecast || globalContext.get(trackerConfig.forecastContextKey)
+            }
+
+            // Generate or use cached forecast
+            if (!state.currentForecast || forecasting.shouldRegenerateForecast(state, now)) {
+              state.currentForecast = forecasting.generateForecast(trackerConfig, state, now, externalForecast)
+              state.forecastDate = now.toISOString().split('T')[0]
+            }
+
+            // Calculate budgeted discharge
+            const currentHour = now.getHours()
+            const batteryCapacityWh = trackerConfig.batteryCapacityWh
+            const currentSoc = batteryState ? batteryState.soc : 0
+            const minSocValue = batteryState ? batteryState.minSoc : 20
+
+            dischargeInfo = forecasting.calculateBudgetedDischarge(
+              trackerConfig,
+              state,
+              state.currentForecast,
+              currentHour,
+              gridPowerW,
+              currentSoc,
+              minSocValue,
+              batteryCapacityWh
+            )
+
+            // Track energy used if discharging
+            if (dischargeInfo.dischargeW > 0 && dischargeInfo.periodKey) {
+              if (!state.periodEnergyUsed) {
+                state.periodEnergyUsed = {}
+              }
+              // Estimate energy used since last update (assume ~10 second intervals)
+              const energyWh = dischargeInfo.dischargeW * (10 / 3600)
+              state.periodEnergyUsed[dischargeInfo.periodKey] =
+                (state.periodEnergyUsed[dischargeInfo.periodKey] || 0) + energyWh
+            }
+
+            forecastInfo = {
+              source: state.currentForecast ? state.currentForecast.source : 'none',
+              periods: state.currentForecast ? state.currentForecast.periods.length : 0,
+              currentPeriod: dischargeInfo.period || null,
+              discharge: dischargeInfo
+            }
+          }
         }
 
         // Log month reset
@@ -85,6 +155,17 @@ module.exports = function (RED) {
           const h = result.hourCompleted
           const nightNote = h.wasNight && trackerConfig.nightDiscount ? ' (night 50%)' : ''
           node.warn(`Effekttariff: Hour ${h.hour}:00 completed - ${(h.avgW / 1000).toFixed(2)} kW${nightNote} [${h.result}]`)
+
+          // Update historical data for forecasting learning
+          if (trackerConfig.forecastSource === 'historical' || trackerConfig.forecastSource !== 'none') {
+            const dayOfWeek = now.getDay()
+            state.historicalData = forecasting.updateHistoricalData(
+              state.historicalData || {},
+              dayOfWeek,
+              h.hour,
+              h.avgW
+            )
+          }
         }
 
         // Update node status
@@ -135,6 +216,11 @@ module.exports = function (RED) {
           statusPayload.battery = batteryStatus
         }
 
+        // Add forecast info to status payload if enabled
+        if (forecastInfo) {
+          statusPayload.forecast = forecastInfo
+        }
+
         const statusMsg = {
           payload: statusPayload,
           topic: 'effekttariff_status'
@@ -155,6 +241,15 @@ module.exports = function (RED) {
                 minSoc: batteryStatus.minSoc,
                 hoursUntilPeak: batteryStatus.hoursUntilPeak,
                 energyDeficitWh: batteryStatus.energyDeficitWh
+              }
+            }
+            // Add discharge info from forecasting if available
+            if (dischargeInfo && dischargeInfo.useBudget) {
+              chargeMsg.discharge = {
+                dischargeW: dischargeInfo.dischargeW,
+                reason: dischargeInfo.reason,
+                remainingBudgetWh: dischargeInfo.remainingBudgetWh,
+                period: dischargeInfo.period
               }
             }
             lastChargeRateW = batteryStatus.chargeRateW

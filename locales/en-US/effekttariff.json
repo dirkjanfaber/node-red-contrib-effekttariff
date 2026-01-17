@@ -19,7 +19,12 @@
       "minSocContextKey": "Min SOC context key",
       "batteryCapacity": "Capacity (kWh)",
       "maxChargeRate": "Max charge (W)",
-      "socBuffer": "SOC buffer (%)"
+      "socBuffer": "SOC buffer (%)",
+      "forecastSource": "Forecast source",
+      "forecastContextKey": "Forecast context key",
+      "morningPeak": "Morning peak",
+      "eveningPeak": "Evening peak",
+      "budgetBuffer": "Budget buffer (%)"
     },
     "placeholder": {
       "name": "Name"
@@ -28,7 +33,17 @@
       "peak": "Peak Measurement",
       "limits": "Limits",
       "electrical": "Electrical",
-      "battery": "Battery Charging"
+      "battery": "Battery Charging",
+      "forecasting": "Consumption Forecasting"
+    },
+    "option": {
+      "forecastNone": "None (reactive)",
+      "forecastTimeBased": "Time-based patterns",
+      "forecastHistorical": "Historical learning",
+      "forecastExternal": "External (VRM/API)"
+    },
+    "help": {
+      "budgetBuffer": "Reserve for unexpected peaks"
     }
   }
 }

@@ -24,7 +24,17 @@
       minSocContextKey: { value: 'battery.minSoc' },
       batteryCapacity: { value: 10, validate: RED.validators.number() },
       maxChargeRate: { value: 3000, validate: RED.validators.number() },
-      socBuffer: { value: 20, validate: RED.validators.number() }
+      socBuffer: { value: 20, validate: RED.validators.number() },
+      // Forecasting settings
+      forecastSource: { value: 'none' },
+      forecastContextKey: { value: 'forecast' },
+      morningPeakStart: { value: 6, validate: RED.validators.number() },
+      morningPeakEnd: { value: 9, validate: RED.validators.number() },
+      morningPeakWeight: { value: 0.3, validate: RED.validators.number() },
+      eveningPeakStart: { value: 17, validate: RED.validators.number() },
+      eveningPeakEnd: { value: 21, validate: RED.validators.number() },
+      eveningPeakWeight: { value: 1.0, validate: RED.validators.number() },
+      budgetBuffer: { value: 20, validate: RED.validators.number() }
     },
     inputs: 1,
     outputs: 4,
@@ -76,10 +86,36 @@
       function toggleBatteryFields () {
         const show = $('#node-input-batteryEnabled').is(':checked')
         $('.battery-row').toggle(show)
+        // Also show/hide forecasting section based on battery
+        toggleForecastFields()
       }
 
       $('#node-input-batteryEnabled').on('change', toggleBatteryFields)
       toggleBatteryFields()
+
+      // Toggle forecast fields visibility based on source
+      function toggleForecastFields () {
+        const batteryEnabled = $('#node-input-batteryEnabled').is(':checked')
+        const source = $('#node-input-forecastSource').val()
+
+        // Show forecasting section only when battery is enabled
+        $('.forecast-section').toggle(batteryEnabled)
+
+        // Show time-based fields
+        const showTimeBased = batteryEnabled && source === 'time-based'
+        $('.forecast-timebased-row').toggle(showTimeBased)
+
+        // Show external fields
+        const showExternal = batteryEnabled && source === 'external'
+        $('.forecast-external-row').toggle(showExternal)
+
+        // Show budget fields for all sources except 'none'
+        const showBudget = batteryEnabled && source !== 'none'
+        $('.forecast-budget-row').toggle(showBudget)
+      }
+
+      $('#node-input-forecastSource').on('change', toggleForecastFields)
+      toggleForecastFields()
     }
   })
 </script>
@@ -200,6 +236,50 @@
     <label for="node-input-socBuffer"><i class="fa fa-plus-circle"></i> <span data-i18n="effekttariff.label.socBuffer">SOC buffer (%)</span></label>
     <input type="number" id="node-input-socBuffer" min="5" max="50" style="width:80px">
   </div>
+
+  <div class="forecast-section">
+    <hr>
+    <h4 data-i18n="effekttariff.section.forecasting">Consumption Forecasting</h4>
+
+    <div class="form-row">
+      <label for="node-input-forecastSource"><i class="fa fa-line-chart"></i> <span data-i18n="effekttariff.label.forecastSource">Forecast source</span></label>
+      <select id="node-input-forecastSource" style="width:200px">
+        <option value="none" data-i18n="effekttariff.option.forecastNone">None (reactive)</option>
+        <option value="time-based" data-i18n="effekttariff.option.forecastTimeBased">Time-based patterns</option>
+        <option value="historical" data-i18n="effekttariff.option.forecastHistorical">Historical learning</option>
+        <option value="external" data-i18n="effekttariff.option.forecastExternal">External (VRM/API)</option>
+      </select>
+    </div>
+
+    <div class="form-row forecast-external-row">
+      <label for="node-input-forecastContextKey"><i class="fa fa-database"></i> <span data-i18n="effekttariff.label.forecastContextKey">Forecast context key</span></label>
+      <input type="text" id="node-input-forecastContextKey" style="width:200px" placeholder="forecast">
+    </div>
+
+    <div class="form-row forecast-timebased-row">
+      <label for="node-input-morningPeakStart"><i class="fa fa-sun-o"></i> <span data-i18n="effekttariff.label.morningPeak">Morning peak</span></label>
+      <input type="number" id="node-input-morningPeakStart" min="0" max="12" style="width:60px">
+      <span>-</span>
+      <input type="number" id="node-input-morningPeakEnd" min="0" max="12" style="width:60px">
+      <span style="margin-left:10px">Weight:</span>
+      <input type="number" id="node-input-morningPeakWeight" min="0" max="1" step="0.1" style="width:60px">
+    </div>
+
+    <div class="form-row forecast-timebased-row">
+      <label for="node-input-eveningPeakStart"><i class="fa fa-moon-o"></i> <span data-i18n="effekttariff.label.eveningPeak">Evening peak</span></label>
+      <input type="number" id="node-input-eveningPeakStart" min="12" max="23" style="width:60px">
+      <span>-</span>
+      <input type="number" id="node-input-eveningPeakEnd" min="12" max="23" style="width:60px">
+      <span style="margin-left:10px">Weight:</span>
+      <input type="number" id="node-input-eveningPeakWeight" min="0" max="1" step="0.1" style="width:60px">
+    </div>
+
+    <div class="form-row forecast-budget-row">
+      <label for="node-input-budgetBuffer"><i class="fa fa-shield"></i> <span data-i18n="effekttariff.label.budgetBuffer">Budget buffer (%)</span></label>
+      <input type="number" id="node-input-budgetBuffer" min="0" max="50" style="width:80px">
+      <span style="margin-left:10px; color:#666; font-size:11px" data-i18n="effekttariff.help.budgetBuffer">Reserve for unexpected peaks</span>
+    </div>
+  </div>
 </script>
 
 <script type="text/html" data-help-name="effekttariff">
@@ -275,6 +355,29 @@
     <li>Respects maximum charge rate limit</li>
     <li>Outputs 0W during peak hours (discharge for peak shaving)</li>
   </ul>
+
+  <h4>Consumption Forecasting</h4>
+  <p>When battery is enabled, you can configure consumption forecasting to
+  intelligently distribute battery capacity across expected peak periods.</p>
+
+  <p><b>Forecast sources:</b></p>
+  <ul>
+    <li><b>None (reactive)</b>: Discharges battery fully on first peaks (default)</li>
+    <li><b>Time-based patterns</b>: Uses configured morning/evening peak windows</li>
+    <li><b>Historical learning</b>: Learns from previous days' consumption</li>
+    <li><b>External (VRM/API)</b>: Accepts forecast via msg.forecast or context</li>
+  </ul>
+
+  <p><b>How it works:</b></p>
+  <ul>
+    <li>Forecasts expected peak periods for the day</li>
+    <li>Allocates battery budget proportionally to expected peak heights</li>
+    <li>Discharges partially during morning peaks to save capacity for evening</li>
+    <li>Results in more balanced peak reduction across the day</li>
+  </ul>
+
+  <p><b>External forecast format (msg.forecast):</b></p>
+  <pre>{ hourly: [500, 400, ..., 6000, ...] } // 24 hourly values in Watts</pre>
 
   <h4>Status Indicator</h4>
   <ul>
