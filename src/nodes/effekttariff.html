@@ -34,7 +34,11 @@
       eveningPeakStart: { value: 17, validate: RED.validators.number() },
       eveningPeakEnd: { value: 21, validate: RED.validators.number() },
       eveningPeakWeight: { value: 1.0, validate: RED.validators.number() },
-      budgetBuffer: { value: 20, validate: RED.validators.number() }
+      budgetBuffer: { value: 20, validate: RED.validators.number() },
+
+      // Dynamic headroom settings
+      dynamicHeadroomEnabled: { value: false },
+      dynamicHeadroomRules: { value: '[{"soc": 20, "headroom": 1.0},{"soc": 80, "headroom": 0.5},{"soc": 101, "headroom": 0.2}]' }
     },
     inputs: 1,
     outputs: 4,
@@ -116,6 +120,15 @@
 
       $('#node-input-forecastSource').on('change', toggleForecastFields)
       toggleForecastFields()
+
+      // Toggle dynamic headroom fields visibility
+      function toggleDynamicHeadroomFields () {
+        const show = $('#node-input-dynamicHeadroomEnabled').is(':checked')
+        $('.dynamic-headroom-row').toggle(show)
+      }
+
+      $('#node-input-dynamicHeadroomEnabled').on('change', toggleDynamicHeadroomFields)
+      toggleDynamicHeadroomFields()
     }
   })
 </script>
@@ -183,6 +196,21 @@
   <div class="form-row">
     <label for="node-input-headroom"><i class="fa fa-arrows-v"></i> <span data-i18n="effekttariff.label.headroom">Headroom (kW)</span></label>
     <input type="number" id="node-input-headroom" min="0" max="2" step="0.1" style="width:80px">
+  </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.dynamicHeadroom">Dynamic Headroom</h4>
+
+  <div class="form-row">
+      <label>&nbsp;</label>
+      <input type="checkbox" id="node-input-dynamicHeadroomEnabled" style="width:auto; margin-right:5px">
+      <label for="node-input-dynamicHeadroomEnabled" style="width:auto" data-i18n="effekttariff.label.dynamicHeadroomEnabled">Enable dynamic headroom</label>
+  </div>
+
+  <div class="form-row dynamic-headroom-row">
+    <label for="node-input-dynamicHeadroomRules"><i class="fa fa-cogs"></i> <span data-i18n="effekttariff.label.dynamicHeadroomRules">Rules (JSON)</span></label>
+    <textarea id="node-input-dynamicHeadroomRules" style="width: 70%; height: 150px;"></textarea>
+    <span style="margin-left: 10px; color: #666; font-size: 11px" data-i18n="effekttariff.help.dynamicHeadroomRules">JSON array of {"soc": &lt;number&gt;, "headroom": &lt;number&gt;} objects.</span>
   </div>
 
   <hr>

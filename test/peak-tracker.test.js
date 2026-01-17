@@ -234,6 +234,145 @@ describe('peak-tracker', () => {
       expect(result.targetLimitW).toBe(4000) // minimum
       expect(result.limitReason).toContain('min')
     })
+
+    it('should use fixed headroom when dynamic headroom is disabled', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        peakCount: 3,
+        minimumLimitKw: 2,
+        headroomKw: 0.3, // Fixed headroom
+        dynamicHeadroom: { enabled: false }
+      })
+
+      state.peaks = [
+        { effective: 6000 },
+        { effective: 5000 },
+        { effective: 4000 }
+      ]
+
+      const result = peakTracker.calculateTargetLimit(state, config, { soc: 50 }) // Pass batteryState
+      expect(result.targetLimitW).toBe(3700) // 4000 - 300
+    })
+
+    it('should use dynamic headroom when enabled and battery data available', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        peakCount: 3,
+        minimumLimitKw: 2,
+        headroomKw: 0.3, // Default fixed headroom
+        dynamicHeadroom: {
+          enabled: true,
+          rules: [
+            { socLessThan: 30, headroomKw: 1.0 },
+            { socLessThan: 70, headroomKw: 0.5 },
+            { socLessThan: 101, headroomKw: 0.2 }
+          ]
+        }
+      })
+
+      state.peaks = [
+        { effective: 6000 },
+        { effective: 5000 },
+        { effective: 4000 }
+      ]
+
+      // SOC 25% -> headroom 1.0kW (1000W)
+      let result = peakTracker.calculateTargetLimit(state, config, { soc: 25 })
+      expect(result.targetLimitW).toBe(3000) // 4000 - 1000
+
+      // SOC 50% -> headroom 0.5kW (500W)
+      result = peakTracker.calculateTargetLimit(state, config, { soc: 50 })
+      expect(result.targetLimitW).toBe(3500) // 4000 - 500
+
+      // SOC 90% -> headroom 0.2kW (200W)
+      result = peakTracker.calculateTargetLimit(state, config, { soc: 90 })
+      expect(result.targetLimitW).toBe(3800) // 4000 - 200
+    })
+
+    it('should use fixed headroom if dynamic is enabled but battery data is missing', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        peakCount: 3,
+        minimumLimitKw: 2,
+        headroomKw: 0.3,
+        dynamicHeadroom: { enabled: true }
+      })
+
+      state.peaks = [
+        { effective: 6000 },
+        { effective: 5000 },
+        { effective: 4000 }
+      ]
+
+      const result = peakTracker.calculateTargetLimit(state, config, null) // No batteryState
+      expect(result.targetLimitW).toBe(3700) // 4000 - 300
+    })
+  })
+
+  describe('calculateDynamicHeadroomW', () => {
+    const config = peakTracker.mergeConfig({
+      headroomKw: 0.3,
+      dynamicHeadroom: {
+        enabled: true,
+        rules: [
+          { socLessThan: 30, headroomKw: 1.0 },
+          { socLessThan: 70, headroomKw: 0.5 },
+          { socLessThan: 101, headroomKw: 0.2 }
+        ]
+      }
+    })
+
+    it('should return fixed headroom if dynamic headroom is disabled', () => {
+      const fixedConfig = peakTracker.mergeConfig({
+        headroomKw: 0.4,
+        dynamicHeadroom: { enabled: false }
+      })
+      const headroom = peakTracker.calculateDynamicHeadroomW(fixedConfig, { soc: 50 })
+      expect(headroom).toBe(400)
+    })
+
+    it('should return fixed headroom if battery data is missing', () => {
+      const headroom = peakTracker.calculateDynamicHeadroomW(config, null)
+      expect(headroom).toBe(300)
+    })
+
+    it('should apply the correct rule for low SOC', () => {
+      const headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 25 })
+      expect(headroom).toBe(1000) // 1.0 kW
+    })
+
+    it('should apply the correct rule for medium SOC', () => {
+      const headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 50 })
+      expect(headroom).toBe(500) // 0.5 kW
+    })
+
+    it('should apply the correct rule for high SOC', () => {
+      const headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 90 })
+      expect(headroom).toBe(200) // 0.2 kW
+    })
+
+    it('should use default fixed headroom if no rule matches (e.g., rules are empty)', () => {
+      const noRulesConfig = peakTracker.mergeConfig({
+        headroomKw: 0.7,
+        dynamicHeadroom: { enabled: true, rules: [] }
+      })
+      const headroom = peakTracker.calculateDynamicHeadroomW(noRulesConfig, { soc: 50 })
+      expect(headroom).toBe(700)
+    })
+
+    it('should handle boundary conditions correctly', () => {
+      let headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 29.99 })
+      expect(headroom).toBe(1000)
+
+      headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 30 })
+      expect(headroom).toBe(500)
+
+      headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 69.99 })
+      expect(headroom).toBe(500)
+
+      headroom = peakTracker.calculateDynamicHeadroomW(config, { soc: 70 })
+      expect(headroom).toBe(200)
+    })
   })
 
   describe('processGridPower', () => {

@@ -24,7 +24,9 @@
       "forecastContextKey": "Prognos-kontextnyckel",
       "morningPeak": "Morgontopp",
       "eveningPeak": "Kvällstopp",
-      "budgetBuffer": "Budgetbuffert (%)"
+      "budgetBuffer": "Budgetbuffert (%)",
+      "dynamicHeadroomEnabled": "Aktivera dynamisk marginal",
+      "dynamicHeadroomRules": "Regler (JSON)"
     },
     "placeholder": {
       "name": "Namn"
@@ -34,7 +36,8 @@
       "limits": "Gränser",
       "electrical": "Elektriskt",
       "battery": "Batteriladdning",
-      "forecasting": "Förbrukningsprognos"
+      "forecasting": "Förbrukningsprognos",
+      "dynamicHeadroom": "Dynamisk marginal"
     },
     "option": {
       "forecastNone": "Ingen (reaktiv)",
@@ -43,7 +46,8 @@
       "forecastExternal": "Extern (VRM/API)"
     },
     "help": {
-      "budgetBuffer": "Reserv för oväntade toppar"
+      "budgetBuffer": "Reserv för oväntade toppar",
+      "dynamicHeadroomRules": "JSON-array med {\"soc\": <nummer>, \"headroom\": <nummer>} objekt. 'soc' är exklusiv övre gräns."
     }
   }
 }
