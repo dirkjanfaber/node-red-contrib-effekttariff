@@ -19,7 +19,12 @@
       "minSocContextKey": "Min SOC-kontextnyckel",
       "batteryCapacity": "Kapacitet (kWh)",
       "maxChargeRate": "Max laddning (W)",
-      "socBuffer": "SOC-buffert (%)"
+      "socBuffer": "SOC-buffert (%)",
+      "forecastSource": "Prognoskälla",
+      "forecastContextKey": "Prognos-kontextnyckel",
+      "morningPeak": "Morgontopp",
+      "eveningPeak": "Kvällstopp",
+      "budgetBuffer": "Budgetbuffert (%)"
     },
     "placeholder": {
       "name": "Namn"
@@ -28,7 +33,17 @@
       "peak": "Toppmätning",
       "limits": "Gränser",
       "electrical": "Elektriskt",
-      "battery": "Batteriladdning"
+      "battery": "Batteriladdning",
+      "forecasting": "Förbrukningsprognos"
+    },
+    "option": {
+      "forecastNone": "Ingen (reaktiv)",
+      "forecastTimeBased": "Tidsbaserade mönster",
+      "forecastHistorical": "Historisk inlärning",
+      "forecastExternal": "Extern (VRM/API)"
+    },
+    "help": {
+      "budgetBuffer": "Reserv för oväntade toppar"
     }
   }
 }
