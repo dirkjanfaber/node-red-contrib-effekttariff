@@ -24,7 +24,10 @@
       "forecastContextKey": "Forecast context key",
       "morningPeak": "Morning peak",
       "eveningPeak": "Evening peak",
-      "budgetBuffer": "Budget buffer (%)"
+      "budgetBuffer": "Budget buffer (%)",
+      "downtimeDetectionEnabled": "Enable downtime detection",
+      "downtimeDetectionTriggerHours": "Trigger after (hours)",
+      "downtimeDetectionAction": "Action"
     },
     "placeholder": {
       "name": "Name"
@@ -34,16 +37,20 @@
       "limits": "Limits",
       "electrical": "Electrical",
       "battery": "Battery Charging",
-      "forecasting": "Consumption Forecasting"
+      "forecasting": "Consumption Forecasting",
+      "downtime": "Downtime Detection"
     },
     "option": {
       "forecastNone": "None (reactive)",
       "forecastTimeBased": "Time-based patterns",
       "forecastHistorical": "Historical learning",
-      "forecastExternal": "External (VRM/API)"
+      "forecastExternal": "External (VRM/API)",
+      "downtimeActionLog": "Log warning",
+      "downtimeActionIgnore": "Ignore"
     },
     "help": {
-      "budgetBuffer": "Reserve for unexpected peaks"
+      "budgetBuffer": "Reserve for unexpected peaks",
+      "downtimeDetection": "Warns when data is missed for a configurable number of hours."
     }
   }
 }

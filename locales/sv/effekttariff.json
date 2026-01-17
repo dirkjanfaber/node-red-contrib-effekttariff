@@ -24,7 +24,10 @@
       "forecastContextKey": "Prognos-kontextnyckel",
       "morningPeak": "Morgontopp",
       "eveningPeak": "Kvällstopp",
-      "budgetBuffer": "Budgetbuffert (%)"
+      "budgetBuffer": "Budgetbuffert (%)",
+      "downtimeDetectionEnabled": "Aktivera detektering av driftstopp",
+      "downtimeDetectionTriggerHours": "Utlös efter (timmar)",
+      "downtimeDetectionAction": "Åtgärd"
     },
     "placeholder": {
       "name": "Namn"
@@ -34,16 +37,20 @@
       "limits": "Gränser",
       "electrical": "Elektriskt",
       "battery": "Batteriladdning",
-      "forecasting": "Förbrukningsprognos"
+      "forecasting": "Förbrukningsprognos",
+      "downtime": "Detektering av driftstopp"
     },
     "option": {
       "forecastNone": "Ingen (reaktiv)",
       "forecastTimeBased": "Tidsbaserade mönster",
       "forecastHistorical": "Historisk inlärning",
-      "forecastExternal": "Extern (VRM/API)"
+      "forecastExternal": "Extern (VRM/API)",
+      "downtimeActionLog": "Logga varning",
+      "downtimeActionIgnore": "Ignorera"
     },
     "help": {
-      "budgetBuffer": "Reserv för oväntade toppar"
+      "budgetBuffer": "Reserv för oväntade toppar",
+      "downtimeDetection": "Varnar när data saknas under ett konfigurerbart antal timmar."
     }
   }
 }
