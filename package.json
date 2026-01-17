@@ -45,5 +45,8 @@
   },
   "peerDependencies": {
     "node-red": ">=2.0.0"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
   }
 }
