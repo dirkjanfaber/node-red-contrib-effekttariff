@@ -412,6 +412,11 @@ describe('peak-tracker', () => {
   })
 
   describe('calculateChargeRate', () => {
+    let state
+    beforeEach(() => {
+      state = peakTracker.createInitialState()
+    })
+
     const config = peakTracker.mergeConfig({
       peakSeasonOnly: false,
       peakHoursStart: 7,
@@ -431,7 +436,7 @@ describe('peak-tracker', () => {
       // At 05:00, 2 hours until peak at 07:00
       // Charge rate = 3000 Wh / 2 h = 1500 W
       const now = new Date('2024-01-15T05:00:00')
-      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+      const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       expect(result.charging).toBe(true)
       expect(result.chargeRateW).toBe(1500)
@@ -445,7 +450,7 @@ describe('peak-tracker', () => {
       // At 06:00, 1 hour until peak
       // Required = 4000 W, but max is 3000 W
       const now = new Date('2024-01-15T06:00:00')
-      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+      const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       expect(result.chargeRateW).toBe(3000) // Capped at max
     })
@@ -454,7 +459,7 @@ describe('peak-tracker', () => {
       const batteryState = { soc: 80, minSoc: 50 }
       // Target = 70%, Current = 80% -> No charging needed
       const now = new Date('2024-01-15T05:00:00')
-      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+      const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       expect(result.charging).toBe(false)
       expect(result.chargeRateW).toBe(0)
@@ -465,7 +470,7 @@ describe('peak-tracker', () => {
       const batteryState = { soc: 40, minSoc: 50 }
       // During peak hours (10:00), should not charge
       const now = new Date('2024-01-15T10:00:00')
-      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+      const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       expect(result.charging).toBe(false)
       expect(result.chargeRateW).toBe(0)
@@ -476,21 +481,21 @@ describe('peak-tracker', () => {
     it('should handle missing battery state gracefully', () => {
       const now = new Date('2024-01-15T05:00:00')
 
-      const resultNull = peakTracker.calculateChargeRate(config, null, now)
+      const resultNull = peakTracker.calculateChargeRate(state, config, null, now)
       expect(resultNull.charging).toBe(false)
       expect(resultNull.reason).toBe('no battery data')
 
-      const resultUndefined = peakTracker.calculateChargeRate(config, undefined, now)
+      const resultUndefined = peakTracker.calculateChargeRate(state, config, undefined, now)
       expect(resultUndefined.charging).toBe(false)
 
-      const resultInvalid = peakTracker.calculateChargeRate(config, { soc: 'invalid' }, now)
+      const resultInvalid = peakTracker.calculateChargeRate(state, config, { soc: 'invalid' }, now)
       expect(resultInvalid.charging).toBe(false)
     })
 
     it('should use default minSoc when not provided', () => {
       const batteryState = { soc: 30 } // No minSoc
       const now = new Date('2024-01-15T05:00:00')
-      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+      const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       // Default minSoc is 20, so target = 20 + 20 = 40%
       expect(result.targetSoc).toBe(40)
@@ -500,20 +505,180 @@ describe('peak-tracker', () => {
     it('should cap target SOC at 100%', () => {
       const batteryState = { soc: 70, minSoc: 90 }
       // Target would be 90 + 20 = 110%, should cap at 100%
-      const now = new Date('2024-01-15T05:00:00')
-      const result = peakTracker.calculateChargeRate(config, batteryState, now)
+      const now = new Date('2024-01-15T05:00:00Z')
+      const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       expect(result.targetSoc).toBe(100)
+    })
+
+    describe('battery balancing', () => {
+      let state // State object for balancing tests
+
+      beforeEach(() => {
+        state = peakTracker.createInitialState()
+      })
+
+      const balancingConfig = {
+        batteryEnabled: true,
+        batteryCapacityWh: 10000,
+        maxChargeRateW: 5000,
+        socBuffer: 20,
+        batteryBalancing: {
+          enabled: true,
+          socThreshold: 95,
+          targetSoc: 100,
+          holdHours: 2,
+          startTime: 0,
+          endTime: 6
+        }
+      }
+
+      it('should activate balancing mode when SOC is above threshold and within time window', () => {
+        const now = new Date('2024-01-15T01:00:00Z') // 01:00, within 00-06 window
+        const batteryState = { soc: 96, minSoc: 20 } // Above 95% threshold
+        const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(true)
+        expect(result.charging).toBe(true)
+        expect(result.chargeRateW).toBe(5000) // Max charge to reach 100%
+        expect(result.reason).toBe('balancing: charging to 100%')
+        expect(state.isBalancing).toBe(true)
+      })
+
+      it('should charge to target SOC when in balancing mode and SOC is below target', () => {
+        state.isBalancing = true // Already in balancing mode
+        const now = new Date('2024-01-15T01:30:00Z')
+        const batteryState = { soc: 98, minSoc: 20 } // Still below 100% target
+        const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(true)
+        expect(result.charging).toBe(true)
+        expect(result.chargeRateW).toBe(5000)
+        expect(result.reason).toBe('balancing: charging to 100%')
+        expect(state.isBalancing).toBe(true)
+      })
+
+      it('should hold target SOC for configured hours when in balancing mode', () => {
+        state.isBalancing = true
+        // First, reach 100%
+        let now = new Date('2024-01-15T02:00:00Z')
+        let batteryState = { soc: 100, minSoc: 20 }
+        let result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(true)
+        expect(result.charging).toBe(false)
+        expect(result.chargeRateW).toBe(0)
+        expect(result.reason).toContain('balancing: holding 100%')
+        expect(state.isBalancing).toBe(true)
+        expect(state.balancingStartTime).not.toBeNull()
+
+        // 1 hour later (within hold period)
+        now = new Date('2024-01-15T03:00:00Z')
+        result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(true)
+        expect(result.charging).toBe(false)
+        expect(result.chargeRateW).toBe(0)
+        expect(result.reason).toContain('balancing: holding 100%')
+        expect(state.isBalancing).toBe(true)
+      })
+
+      it('should exit balancing mode after holding target SOC for configured hours', () => {
+        state.isBalancing = true
+        state.balancingStartTime = new Date('2024-01-15T02:00:00Z').getTime() // Started holding 2 hours ago
+        const now = new Date('2024-01-15T04:00:00Z') // Now, 2 hours later
+        const batteryState = { soc: 100, minSoc: 20 }
+        const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(false) // Should exit balancing
+        expect(result.charging).toBe(false)
+        expect(result.chargeRateW).toBe(0)
+        expect(result.reason).toBe('SOC sufficient') // Falls back to normal SOC sufficient logic
+        expect(state.isBalancing).toBe(false)
+        expect(state.balancingStartTime).toBeNull()
+      })
+
+      it('should not activate balancing mode if disabled', () => {
+        const disabledConfig = peakTracker.mergeConfig({
+          batteryEnabled: true,
+          batteryBalancing: {
+            enabled: false, // Disabled
+            socThreshold: 95,
+            targetSoc: 100,
+            holdHours: 2,
+            startTime: 0,
+            endTime: 6
+          }
+        })
+        const now = new Date('2024-01-15T01:00:00Z')
+        const batteryState = { soc: 96, minSoc: 20 }
+        const result = peakTracker.calculateChargeRate(state, disabledConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(false)
+        expect(result.reason).toBe('SOC sufficient') // Falls back to normal logic
+        expect(state.isBalancing).toBe(false)
+      })
+
+      it('should not activate balancing mode if SOC is below threshold', () => {
+        const now = new Date('2024-01-15T01:00:00Z')
+        const batteryState = { soc: 90, minSoc: 20 } // Below 95% threshold
+        const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(false)
+        expect(result.reason).toBe('SOC sufficient') // Falls back to normal logic
+        expect(state.isBalancing).toBe(false)
+      })
+
+      it('should not activate balancing mode if outside time window', () => {
+        const now = new Date('2024-01-15T07:00:00Z') // 07:00, outside 00-06 window
+        const batteryState = { soc: 96, minSoc: 20 }
+        const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(false)
+        expect(result.reason).toBe('SOC sufficient') // Falls back to normal logic
+        expect(state.isBalancing).toBe(false)
+      })
+
+      it('should prioritize peak hours discharge over balancing mode', () => {
+        state.isBalancing = true
+        state.balancingStartTime = new Date('2024-01-15T02:00:00Z').getTime()
+        const peakHourConfig = peakTracker.mergeConfig({
+          batteryEnabled: true,
+          peakHoursStart: 7,
+          peakHoursEnd: 21,
+          batteryBalancing: {
+            enabled: true,
+            socThreshold: 95,
+            targetSoc: 100,
+            holdHours: 2,
+            startTime: 0,
+            endTime: 23 // Wide window
+          }
+        })
+        const now = new Date('2024-01-15T10:00:00Z') // Peak hours
+        const batteryState = { soc: 98, minSoc: 20 }
+        const result = peakTracker.calculateChargeRate(state, peakHourConfig, batteryState, now)
+
+        expect(result.balancingActive).toBe(false)
+        expect(result.reason).toBe('peak hours - discharge mode')
+        expect(state.isBalancing).toBe(false) // Exit balancing mode
+        expect(state.balancingStartTime).toBeNull()
+      })
     })
   })
 
   describe('getBatteryStatus', () => {
+    let state
+    beforeEach(() => {
+      state = peakTracker.createInitialState()
+    })
+
     it('should return null when battery is disabled', () => {
       const config = peakTracker.mergeConfig({ batteryEnabled: false })
       const batteryState = { soc: 50, minSoc: 30 }
       const now = new Date('2024-01-15T05:00:00')
 
-      const result = peakTracker.getBatteryStatus(config, batteryState, now)
+      const result = peakTracker.getBatteryStatus(state, config, batteryState, now)
 
       expect(result).toBeNull()
     })
@@ -527,7 +692,7 @@ describe('peak-tracker', () => {
       const batteryState = { soc: 40, minSoc: 50 }
       const now = new Date('2024-01-15T05:00:00')
 
-      const result = peakTracker.getBatteryStatus(config, batteryState, now)
+      const result = peakTracker.getBatteryStatus(state, config, batteryState, now)
 
       expect(result).not.toBeNull()
       expect(result.enabled).toBe(true)
@@ -540,7 +705,7 @@ describe('peak-tracker', () => {
       const config = peakTracker.mergeConfig({ batteryEnabled: true })
       const now = new Date('2024-01-15T05:00:00')
 
-      const result = peakTracker.getBatteryStatus(config, null, now)
+      const result = peakTracker.getBatteryStatus(state, config, null, now)
 
       expect(result.enabled).toBe(true)
       expect(result.available).toBe(false)
