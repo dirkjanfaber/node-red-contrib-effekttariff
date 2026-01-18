@@ -2,14 +2,25 @@
 
 Node-RED node for Swedish "effekttariff" (power tariff) peak shaving.
 
-## Overview
+## Understanding Your Electricity Bill in Sweden
 
-Swedish electricity providers charge a monthly "effektavgift" (power fee) based on the average of your 2-3 highest hourly consumption peaks during the month. This node helps minimize that fee by:
+In Sweden, your total electricity cost is typically composed of two main parts:
 
-1. Tracking your hourly consumption averages
-2. Recording your top peaks for the month
-3. Outputting a current limit (in Amperes) to keep new peaks below existing ones
-4. Automatically resetting on the 1st of each month
+1.  **Energy Cost (Spot Price)**: The price for the actual electricity (kWh) you consume. With a dynamic contract ("rörligt elpris med timprisavtal"), this price changes every hour based on the Nord Pool spot market.
+2.  **Grid Fee (Nätavgift)**: What you pay to your local grid company (`nätbolag`) for grid maintenance and usage.
+
+This node focuses on minimizing a component of the **Grid Fee** called the **power tariff (`effektavgift`)**.
+
+## How the Power Tariff (Effekttariff) Works
+
+The goal of the power tariff is to encourage users to spread out their consumption and reduce load on the grid. It does this by adding a fee based on your highest consumption peaks. However, the exact calculation method varies between grid companies.
+
+The two most common models are:
+
+1.  **Average of N Peaks (e.g., Göteborg Energi, Mölndal Energi)**: The fee is based on the **average** of your 2-3 highest hourly consumption values during a month. These peaks are often only measured on different weekdays during specific "peak hours". **This is the model currently implemented by this node.**
+2.  **Single Highest Peak**: The fee is based on the **single highest hourly average** consumption during the month.
+
+**Important:** You must configure this node according to your specific grid company's rules, especially the **peak hours** and the number of **peaks to average**.
 
 > **Disclaimer:** The peak reduction estimates provided by this node and its tools are theoretical. Actual savings depend on many factors including your consumption patterns, equipment response times, battery efficiency, and grid conditions. Results may vary from simulated values.
 
@@ -30,13 +41,13 @@ Connect a Grid Meter node (Power in Watts) to the input. The node expects positi
 
 ### Outputs
 
-1. **Current Limit (A)**: Target current limit in Amperes. Connect to your ESS current limit control (e.g., Victron `Ac/In/1/CurrentLimit`). Only outputs when the value changes.
+1.  **Current Limit (A)**: Target current limit in Amperes. Connect to your ESS current limit control (e.g., Victron `Ac/In/1/CurrentLimit`). Only outputs when the value changes.
 
-2. **Status**: Object with detailed peak data for debugging or dashboard display.
+2.  **Status**: Object with detailed peak data for debugging or dashboard display.
 
-3. **Charge Rate (W)**: Battery charge rate recommendation in Watts (only when battery charging is enabled). Connect to your battery charge controller to ensure the battery is charged before peak hours.
+3.  **Charge Rate (W)**: Battery charge rate recommendation in Watts (only when battery charging is enabled). Connect to your battery charge controller to ensure the battery is charged before peak hours.
 
-4. **Chart Data**: Array of chart-ready messages for FlowFuse Dashboard 2.0 (`@flowfuse/node-red-dashboard`). Connect to a `ui-chart` node to visualize consumption, limits, and peaks in real-time. Each message has a `topic` (series name) and `payload` with `x` (timestamp) and `y` (value). Series include: `consumption`, `limit`, `target`, `peak_avg`, `battery_soc`.
+4.  **Chart Data**: Array of chart-ready messages for FlowFuse Dashboard 2.0 (`@flowfuse/node-red-dashboard`). Connect to a `ui-chart` node to visualize consumption, limits, and peaks in real-time. Each message has a `topic` (series name) and `payload` with `x` (timestamp) and `y` (value). Series include: `consumption`, `limit`, `target`, `peak_avg`, `battery_soc`.
 
 ## Configuration
 
@@ -118,6 +129,13 @@ Example at 230V: 4 kW = 17.4A (1-phase) or 5.8A (3-phase)
 | Ellevio | 3 | 07-19 | Nov-Mar | No | Yes |
 | Kungälv Energi | 3 | 07-21 | Nov-Mar | Yes | Yes |
 | Jönköping Energi | 2 | 07-21 | All year | No | No |
+
+## Future Development
+
+This node is under active development. Future enhancements will focus on creating a more comprehensive "Cost-Saving Optimizer" by integrating dynamic spot prices.
+
+- **Flexible Tariff Models**: Allow users to select their grid company's specific power tariff model (`average of N peaks` vs. `single highest peak`).
+- **Cost-Aware Logic**: Make the battery charging and discharging logic aware of the hourly energy price. The system will then be able to make economic decisions, balancing the cost of the power tariff against the cost of the energy itself.
 
 ## Battery Sizing Tool
 
