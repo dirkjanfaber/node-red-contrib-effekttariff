@@ -34,7 +34,15 @@
       eveningPeakStart: { value: 17, validate: RED.validators.number() },
       eveningPeakEnd: { value: 21, validate: RED.validators.number() },
       eveningPeakWeight: { value: 1.0, validate: RED.validators.number() },
-      budgetBuffer: { value: 20, validate: RED.validators.number() }
+      budgetBuffer: { value: 20, validate: RED.validators.number() },
+
+      // Battery balancing settings
+      batteryBalancingEnabled: { value: false },
+      batteryBalancingSocThreshold: { value: 95, validate: RED.validators.number() },
+      batteryBalancingTargetSoc: { value: 100, validate: RED.validators.number() },
+      batteryBalancingHoldHours: { value: 2, validate: RED.validators.number() },
+      batteryBalancingStartTime: { value: 0, validate: RED.validators.number() },
+      batteryBalancingEndTime: { value: 6, validate: RED.validators.number() }
     },
     inputs: 1,
     outputs: 4,
@@ -116,6 +124,24 @@
 
       $('#node-input-forecastSource').on('change', toggleForecastFields)
       toggleForecastFields()
+
+      // Toggle dynamic headroom fields visibility
+      function toggleDynamicHeadroomFields () {
+        const show = $('#node-input-dynamicHeadroomEnabled').is(':checked')
+        $('.dynamic-headroom-row').toggle(show)
+      }
+
+      $('#node-input-dynamicHeadroomEnabled').on('change', toggleDynamicHeadroomFields)
+      toggleDynamicHeadroomFields()
+
+      // Toggle battery balancing fields visibility
+      function toggleBatteryBalancingFields () {
+        const show = $('#node-input-batteryBalancingEnabled').is(':checked')
+        $('.battery-balancing-details-row').toggle(show)
+      }
+
+      $('#node-input-batteryBalancingEnabled').on('change', toggleBatteryBalancingFields)
+      toggleBatteryBalancingFields()
     }
   })
 </script>
@@ -235,6 +261,39 @@
   <div class="form-row battery-row">
     <label for="node-input-socBuffer"><i class="fa fa-plus-circle"></i> <span data-i18n="effekttariff.label.socBuffer">SOC buffer (%)</span></label>
     <input type="number" id="node-input-socBuffer" min="5" max="50" style="width:80px">
+  </div>
+
+  <div class="battery-balancing-section">
+    <hr>
+    <h4 data-i18n="effekttariff.section.batteryBalancing">Battery Balancing</h4>
+
+    <div class="form-row">
+      <label>&nbsp;</label>
+      <input type="checkbox" id="node-input-batteryBalancingEnabled" style="width:auto; margin-right:5px">
+      <label for="node-input-batteryBalancingEnabled" style="width:auto" data-i18n="effekttariff.label.batteryBalancingEnabled">Enable periodic balancing</label>
+    </div>
+
+    <div class="form-row battery-balancing-details-row">
+      <label for="node-input-batteryBalancingSocThreshold"><i class="fa fa-battery-quarter"></i> <span data-i18n="effekttariff.label.batteryBalancingSocThreshold">Start balancing above SOC (%)</span></label>
+      <input type="number" id="node-input-batteryBalancingSocThreshold" min="0" max="100" style="width:80px">
+    </div>
+
+    <div class="form-row battery-balancing-details-row">
+      <label for="node-input-batteryBalancingTargetSoc"><i class="fa fa-battery-full"></i> <span data-i18n="effekttariff.label.batteryBalancingTargetSoc">Target SOC (%)</span></label>
+      <input type="number" id="node-input-batteryBalancingTargetSoc" min="0" max="100" style="width:80px">
+    </div>
+
+    <div class="form-row battery-balancing-details-row">
+      <label for="node-input-batteryBalancingHoldHours"><i class="fa fa-hourglass-half"></i> <span data-i18n="effekttariff.label.batteryBalancingHoldHours">Hold target SOC for (hours)</span></label>
+      <input type="number" id="node-input-batteryBalancingHoldHours" min="0" max="24" style="width:80px">
+    </div>
+
+    <div class="form-row battery-balancing-details-row">
+      <label for="node-input-batteryBalancingStartTime"><i class="fa fa-clock-o"></i> <span data-i18n="effekttariff.label.batteryBalancingTimeWindow">Time window</span></label>
+      <input type="number" id="node-input-batteryBalancingStartTime" min="0" max="23" style="width:60px">
+      <span>-</span>
+      <input type="number" id="node-input-batteryBalancingEndTime" min="0" max="23" style="width:60px">
+    </div>
   </div>
 
   <div class="forecast-section">

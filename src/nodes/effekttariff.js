@@ -86,7 +86,7 @@ module.exports = function (RED) {
             }
           }
 
-          batteryStatus = peakTracker.getBatteryStatus(trackerConfig, batteryState, now)
+          batteryStatus = peakTracker.getBatteryStatus(state, trackerConfig, batteryState, now)
 
           // Handle forecasting for budget-based discharge
           if (trackerConfig.forecastSource !== 'none') {

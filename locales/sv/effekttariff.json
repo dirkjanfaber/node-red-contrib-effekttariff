@@ -24,7 +24,12 @@
       "forecastContextKey": "Prognos-kontextnyckel",
       "morningPeak": "Morgontopp",
       "eveningPeak": "Kvällstopp",
-      "budgetBuffer": "Budgetbuffert (%)"
+      "budgetBuffer": "Budgetbuffert (%)",
+      "batteryBalancingEnabled": "Aktivera periodisk balansering",
+      "batteryBalancingSocThreshold": "Starta balansering över SOC (%)",
+      "batteryBalancingTargetSoc": "Mål-SOC (%)",
+      "batteryBalancingHoldHours": "Håll mål-SOC i (timmar)",
+      "batteryBalancingTimeWindow": "Tidsfönster"
     },
     "placeholder": {
       "name": "Namn"
@@ -34,7 +39,8 @@
       "limits": "Gränser",
       "electrical": "Elektriskt",
       "battery": "Batteriladdning",
-      "forecasting": "Förbrukningsprognos"
+      "forecasting": "Förbrukningsprognos",
+      "batteryBalancing": "Batteribalansering"
     },
     "option": {
       "forecastNone": "Ingen (reaktiv)",

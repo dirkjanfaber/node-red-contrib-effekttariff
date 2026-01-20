@@ -24,7 +24,12 @@
       "forecastContextKey": "Forecast context key",
       "morningPeak": "Morning peak",
       "eveningPeak": "Evening peak",
-      "budgetBuffer": "Budget buffer (%)"
+      "budgetBuffer": "Budget buffer (%)",
+      "batteryBalancingEnabled": "Enable periodic balancing",
+      "batteryBalancingSocThreshold": "Start balancing above SOC (%)",
+      "batteryBalancingTargetSoc": "Target SOC (%)",
+      "batteryBalancingHoldHours": "Hold target SOC for (hours)",
+      "batteryBalancingTimeWindow": "Time window"
     },
     "placeholder": {
       "name": "Name"
@@ -34,7 +39,8 @@
       "limits": "Limits",
       "electrical": "Electrical",
       "battery": "Battery Charging",
-      "forecasting": "Consumption Forecasting"
+      "forecasting": "Consumption Forecasting",
+      "batteryBalancing": "Battery Balancing"
     },
     "option": {
       "forecastNone": "None (reactive)",
