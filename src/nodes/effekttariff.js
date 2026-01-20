@@ -65,15 +65,8 @@ module.exports = function (RED) {
         const gridPowerW = parseFloat(msg.payload) || 0
         const now = new Date()
 
-        // Process the measurement
-        const result = peakTracker.processGridPower(state, trackerConfig, gridPowerW, now)
-
         // Read battery state from global context if enabled
         let batteryState = null
-        let batteryStatus = null
-        let forecastInfo = null
-        let dischargeInfo = null
-
         if (trackerConfig.batteryEnabled) {
           const globalContext = node.context().global
           const soc = globalContext.get(trackerConfig.socContextKey)
@@ -85,7 +78,17 @@ module.exports = function (RED) {
               minSoc: typeof minSoc === 'number' ? minSoc : 20
             }
           }
+        }
 
+        // Process the measurement
+        const result = peakTracker.processGridPower(state, trackerConfig, gridPowerW, now, batteryState)
+
+        // Battery status variables
+        let batteryStatus = null
+        let forecastInfo = null
+        let dischargeInfo = null
+
+        if (trackerConfig.batteryEnabled) {
           batteryStatus = peakTracker.getBatteryStatus(state, trackerConfig, batteryState, now)
 
           // Handle forecasting for budget-based discharge

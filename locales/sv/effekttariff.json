@@ -29,7 +29,9 @@
       "batteryBalancingSocThreshold": "Starta balansering över SOC (%)",
       "batteryBalancingTargetSoc": "Mål-SOC (%)",
       "batteryBalancingHoldHours": "Håll mål-SOC i (timmar)",
-      "batteryBalancingTimeWindow": "Tidsfönster"
+      "batteryBalancingTimeWindow": "Tidsfönster",
+      "dynamicHeadroomEnabled": "Aktivera dynamisk marginal",
+      "dynamicHeadroomRules": "Regler (JSON)"
     },
     "placeholder": {
       "name": "Namn"
@@ -40,7 +42,8 @@
       "electrical": "Elektriskt",
       "battery": "Batteriladdning",
       "forecasting": "Förbrukningsprognos",
-      "batteryBalancing": "Batteribalansering"
+      "batteryBalancing": "Batteribalansering",
+      "dynamicHeadroom": "Dynamisk marginal"
     },
     "option": {
       "forecastNone": "Ingen (reaktiv)",
@@ -49,7 +52,8 @@
       "forecastExternal": "Extern (VRM/API)"
     },
     "help": {
-      "budgetBuffer": "Reserv för oväntade toppar"
+      "budgetBuffer": "Reserv för oväntade toppar",
+      "dynamicHeadroomRules": "JSON-array med {\"soc\": <nummer>, \"headroom\": <nummer>} objekt. 'soc' är exklusiv övre gräns."
     }
   }
 }

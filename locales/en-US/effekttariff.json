@@ -29,7 +29,9 @@
       "batteryBalancingSocThreshold": "Start balancing above SOC (%)",
       "batteryBalancingTargetSoc": "Target SOC (%)",
       "batteryBalancingHoldHours": "Hold target SOC for (hours)",
-      "batteryBalancingTimeWindow": "Time window"
+      "batteryBalancingTimeWindow": "Time window",
+      "dynamicHeadroomEnabled": "Enable dynamic headroom",
+      "dynamicHeadroomRules": "Rules (JSON)"
     },
     "placeholder": {
       "name": "Name"
@@ -40,7 +42,8 @@
       "electrical": "Electrical",
       "battery": "Battery Charging",
       "forecasting": "Consumption Forecasting",
-      "batteryBalancing": "Battery Balancing"
+      "batteryBalancing": "Battery Balancing",
+      "dynamicHeadroom": "Dynamic Headroom"
     },
     "option": {
       "forecastNone": "None (reactive)",
@@ -49,7 +52,8 @@
       "forecastExternal": "External (VRM/API)"
     },
     "help": {
-      "budgetBuffer": "Reserve for unexpected peaks"
+      "budgetBuffer": "Reserve for unexpected peaks",
+      "dynamicHeadroomRules": "JSON array of {\"soc\": <number>, \"headroom\": <number>} objects. 'soc' is exclusive upper bound."
     }
   }
 }
