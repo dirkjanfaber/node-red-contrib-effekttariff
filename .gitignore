@@ -4,3 +4,4 @@ simulation-output/
 .DS_Store
 *.log
 .env
+*.tgz

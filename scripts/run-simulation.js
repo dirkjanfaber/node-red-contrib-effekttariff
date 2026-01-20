@@ -27,6 +27,8 @@ const quiet = args.includes('-q') || args.includes('--quiet')
 const verify = !args.includes('--no-verify')
 const exportHtml = args.includes('--html')
 const exportCsv = args.includes('--csv')
+const noTimestamp = args.includes('--no-timestamp')
+const noOpen = args.includes('--no-open')
 
 // Parse --key=value parameters for config overrides
 function parseConfigOverrides () {
@@ -115,6 +117,8 @@ ${colorize('Options:', 'cyan')}
   --no-verify      Skip verification checks
   --html           Generate interactive HTML report with charts
   --csv            Export data to CSV files
+  --no-timestamp   Use simple filenames without timestamp (for CI)
+  --no-open        Don't auto-open HTML report in browser
 
 ${colorize('Config Overrides:', 'cyan')}
   --days=N              Simulation duration in days
@@ -261,7 +265,7 @@ const { name, description, results, verification } = runSingleScenario(scenarioA
 // Handle exports
 if (exportCsv || exportHtml) {
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')
-  const prefix = `${scenarioArg}_${timestamp}`
+  const prefix = noTimestamp ? scenarioArg : `${scenarioArg}_${timestamp}`
 
   console.log('')
 
@@ -282,13 +286,15 @@ if (exportCsv || exportHtml) {
     })
     console.log(colorize('HTML report:', 'cyan'), htmlPath)
 
-    // Auto-open in browser
-    const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
-    exec(`${openCmd} "${htmlPath}"`, (err) => {
-      if (err && !quiet) {
-        console.log(colorize('Could not auto-open browser. Please open the file manually.', 'dim'))
-      }
-    })
+    // Auto-open in browser (unless --no-open specified)
+    if (!noOpen) {
+      const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open'
+      exec(`${openCmd} "${htmlPath}"`, (err) => {
+        if (err && !quiet) {
+          console.log(colorize('Could not auto-open browser. Please open the file manually.', 'dim'))
+        }
+      })
+    }
   }
 }
 

@@ -203,22 +203,24 @@ Output files are saved to `./simulation-output/`.
 
 ### Available Scenarios
 
-| Scenario | Description | Duration |
-|----------|-------------|----------|
-| `basicWeek` | Typical Swedish household consumption | 7 days |
-| `fullMonth` | Complete month to verify peak reset | 35 days |
-| `highSpikes` | Baseline with EV charging/sauna spikes | 14 days |
-| `nightDiscount` | Tests night discount (nattsänkning) feature | 7 days |
-| `weekdaysOnly` | Weekday-only limit enforcement (Ellevio style) | 14 days |
-| `winterSeason` | Winter season filtering (Nov-Mar) | 60 days |
-| `singlePhase` | Single phase installation | 7 days |
-| `minimumLimit` | Very low consumption, minimum limit test | 7 days |
-| `jonkoping` | Jönköping Energi configuration (2 peaks) | 14 days |
-| `stressTest` | High variability consumption | 30 days |
-| `batteryCharging` | Smart battery charging during off-peak | 7 days |
-| `batteryBalancing` | Periodic battery balancing feature | 1 day |
-| `dynamicHeadroom` | Dynamic headroom based on battery SOC | 1 day |
-| `downtimeDetection` | System downtime detection with data gaps | 3 days |
+Interactive HTML reports are automatically generated and available online. **[View all simulation reports](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/index.html)**
+
+| Scenario | Description | Duration | Report |
+|----------|-------------|----------|--------|
+| `basicWeek` | Typical Swedish household consumption | 7 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/basicWeek.html) |
+| `fullMonth` | Complete month to verify peak reset | 35 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/fullMonth.html) |
+| `highSpikes` | Baseline with EV charging/sauna spikes | 14 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/highSpikes.html) |
+| `nightDiscount` | Tests night discount (nattsänkning) feature | 7 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/nightDiscount.html) |
+| `weekdaysOnly` | Weekday-only limit enforcement (Ellevio style) | 14 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/weekdaysOnly.html) |
+| `winterSeason` | Winter season filtering (Nov-Mar) | 60 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/winterSeason.html) |
+| `singlePhase` | Single phase installation | 7 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/singlePhase.html) |
+| `minimumLimit` | Very low consumption, minimum limit test | 7 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/minimumLimit.html) |
+| `jonkoping` | Jönköping Energi configuration (2 peaks) | 14 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/jonkoping.html) |
+| `stressTest` | High variability consumption | 30 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/stressTest.html) |
+| `batteryCharging` | Smart battery charging during off-peak | 7 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/batteryCharging.html) |
+| `batteryBalancing` | Periodic battery balancing feature | 1 day | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/batteryBalancing.html) |
+| `dynamicHeadroom` | Dynamic headroom based on battery SOC | 1 day | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/dynamicHeadroom.html) |
+| `downtimeDetection` | System downtime detection with data gaps | 3 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/downtimeDetection.html) |
 
 ### Running Tests
 
