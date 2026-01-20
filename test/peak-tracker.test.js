@@ -474,7 +474,7 @@ describe('peak-tracker', () => {
       state.currentHourSamples = 10
 
       // Simulate a jump from 10:00 to 13:00 (3-hour gap, triggerHours is 2)
-      const now = new Date('2024-01-15T13:00:00Z')
+      const now = new Date(2024, 0, 15, 13, 0, 0) // Local time
       const result = peakTracker.processGridPower(state, config, 2000, now)
 
       expect(result.downtime).not.toBeNull()
@@ -499,7 +499,7 @@ describe('peak-tracker', () => {
       state.currentHourSamples = 10
 
       // Simulate a jump from 10:00 to 11:00 (1-hour gap)
-      const now = new Date('2024-01-15T11:00:00Z')
+      const now = new Date(2024, 0, 15, 11, 0, 0) // Local time
       const result = peakTracker.processGridPower(state, config, 2000, now)
 
       expect(result.downtime).toBeNull()
@@ -520,7 +520,7 @@ describe('peak-tracker', () => {
       state.currentHourSum = 1000
       state.currentHourSamples = 10
 
-      const now = new Date('2024-01-15T13:00:00Z')
+      const now = new Date(2024, 0, 15, 13, 0, 0) // Local time
       const result = peakTracker.processGridPower(state, config, 2000, now)
 
       expect(result.downtime).toBeNull()
@@ -542,7 +542,7 @@ describe('peak-tracker', () => {
       state.currentHourSamples = 10
 
       // Simulate a jump from 23:00 to 02:00 next day (3-hour gap: 00, 01, 02)
-      const now = new Date('2024-01-16T02:00:00Z')
+      const now = new Date(2024, 0, 16, 2, 0, 0) // Local time
       const result = peakTracker.processGridPower(state, config, 2000, now)
 
       expect(result.downtime).not.toBeNull()
@@ -738,7 +738,7 @@ describe('peak-tracker', () => {
     it('should cap target SOC at 100%', () => {
       const batteryState = { soc: 70, minSoc: 90 }
       // Target would be 90 + 20 = 110%, should cap at 100%
-      const now = new Date('2024-01-15T05:00:00Z')
+      const now = new Date(2024, 0, 15, 5, 0, 0)
       const result = peakTracker.calculateChargeRate(state, config, batteryState, now)
 
       expect(result.targetSoc).toBe(100)
@@ -767,7 +767,7 @@ describe('peak-tracker', () => {
       }
 
       it('should activate balancing mode when SOC is above threshold and within time window', () => {
-        const now = new Date('2024-01-15T01:00:00Z') // 01:00, within 00-06 window
+        const now = new Date(2024, 0, 15, 1, 0, 0) // 01:00, within 00-06 window
         const batteryState = { soc: 96, minSoc: 20 } // Above 95% threshold
         const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
@@ -780,7 +780,7 @@ describe('peak-tracker', () => {
 
       it('should charge to target SOC when in balancing mode and SOC is below target', () => {
         state.isBalancing = true // Already in balancing mode
-        const now = new Date('2024-01-15T01:30:00Z')
+        const now = new Date(2024, 0, 15, 1, 30, 0)
         const batteryState = { soc: 98, minSoc: 20 } // Still below 100% target
         const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
@@ -794,7 +794,7 @@ describe('peak-tracker', () => {
       it('should hold target SOC for configured hours when in balancing mode', () => {
         state.isBalancing = true
         // First, reach 100%
-        let now = new Date('2024-01-15T02:00:00Z')
+        let now = new Date(2024, 0, 15, 2, 0, 0)
         let batteryState = { soc: 100, minSoc: 20 }
         let result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
@@ -806,7 +806,7 @@ describe('peak-tracker', () => {
         expect(state.balancingStartTime).not.toBeNull()
 
         // 1 hour later (within hold period)
-        now = new Date('2024-01-15T03:00:00Z')
+        now = new Date(2024, 0, 15, 3, 0, 0)
         result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
         expect(result.balancingActive).toBe(true)
@@ -818,8 +818,8 @@ describe('peak-tracker', () => {
 
       it('should exit balancing mode after holding target SOC for configured hours', () => {
         state.isBalancing = true
-        state.balancingStartTime = new Date('2024-01-15T02:00:00Z').getTime() // Started holding 2 hours ago
-        const now = new Date('2024-01-15T04:00:00Z') // Now, 2 hours later
+        state.balancingStartTime = new Date(2024, 0, 15, 2, 0, 0).getTime() // Started holding 2 hours ago
+        const now = new Date(2024, 0, 15, 4, 0, 0) // Now, 2 hours later
         const batteryState = { soc: 100, minSoc: 20 }
         const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
@@ -843,7 +843,7 @@ describe('peak-tracker', () => {
             endTime: 6
           }
         })
-        const now = new Date('2024-01-15T01:00:00Z')
+        const now = new Date(2024, 0, 15, 1, 0, 0)
         const batteryState = { soc: 96, minSoc: 20 }
         const result = peakTracker.calculateChargeRate(state, disabledConfig, batteryState, now)
 
@@ -853,7 +853,7 @@ describe('peak-tracker', () => {
       })
 
       it('should not activate balancing mode if SOC is below threshold', () => {
-        const now = new Date('2024-01-15T01:00:00Z')
+        const now = new Date(2024, 0, 15, 1, 0, 0)
         const batteryState = { soc: 90, minSoc: 20 } // Below 95% threshold
         const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
@@ -863,7 +863,7 @@ describe('peak-tracker', () => {
       })
 
       it('should not activate balancing mode if outside time window', () => {
-        const now = new Date('2024-01-15T07:00:00Z') // 07:00, outside 00-06 window
+        const now = new Date(2024, 0, 15, 7, 0, 0) // 07:00, outside 00-06 window
         const batteryState = { soc: 96, minSoc: 20 }
         const result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
@@ -874,7 +874,7 @@ describe('peak-tracker', () => {
 
       it('should prioritize peak hours discharge over balancing mode', () => {
         state.isBalancing = true
-        state.balancingStartTime = new Date('2024-01-15T02:00:00Z').getTime()
+        state.balancingStartTime = new Date(2024, 0, 15, 2, 0, 0).getTime()
         const peakHourConfig = peakTracker.mergeConfig({
           batteryEnabled: true,
           peakHoursStart: 7,
@@ -888,7 +888,7 @@ describe('peak-tracker', () => {
             endTime: 23 // Wide window
           }
         })
-        const now = new Date('2024-01-15T10:00:00Z') // Peak hours
+        const now = new Date(2024, 0, 15, 10, 0, 0) // Peak hours
         const batteryState = { soc: 98, minSoc: 20 }
         const result = peakTracker.calculateChargeRate(state, peakHourConfig, batteryState, now)
 

@@ -216,6 +216,9 @@ Output files are saved to `./simulation-output/`.
 | `jonkoping` | Jönköping Energi configuration (2 peaks) | 14 days |
 | `stressTest` | High variability consumption | 30 days |
 | `batteryCharging` | Smart battery charging during off-peak | 7 days |
+| `batteryBalancing` | Periodic battery balancing feature | 1 day |
+| `dynamicHeadroom` | Dynamic headroom based on battery SOC | 1 day |
+| `downtimeDetection` | System downtime detection with data gaps | 3 days |
 
 ### Running Tests
 
