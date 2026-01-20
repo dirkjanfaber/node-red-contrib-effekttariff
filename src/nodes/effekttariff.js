@@ -41,7 +41,12 @@ module.exports = function (RED) {
       eveningPeakStart: parseInt(config.eveningPeakStart) || 17,
       eveningPeakEnd: parseInt(config.eveningPeakEnd) || 21,
       eveningPeakWeight: parseFloat(config.eveningPeakWeight) || 1.0,
-      budgetBuffer: parseFloat(config.budgetBuffer) || 20
+      budgetBuffer: parseFloat(config.budgetBuffer) || 20,
+      downtimeDetection: {
+        enabled: config.downtimeDetectionEnabled !== false,
+        triggerHours: parseInt(config.downtimeDetectionTriggerHours) || 2,
+        action: config.downtimeDetectionAction || 'log'
+      }
     })
 
     // Track last charge rate for change detection
@@ -151,6 +156,11 @@ module.exports = function (RED) {
         // Log month reset
         if (result.monthReset) {
           node.warn(`Effekttariff: New month (${peakTracker.MONTH_NAMES[now.getMonth()]}) - reset ${result.previousPeakCount} peaks`)
+        }
+
+        // Log downtime
+        if (result.downtime) {
+          node.warn(`Effekttariff: Downtime detected! Missed ${result.downtime.missedHours} hours of data between ${result.downtime.fromHour}:00 and ${result.downtime.toHour}:00.`)
         }
 
         // Log hour completion

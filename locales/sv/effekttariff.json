@@ -31,7 +31,10 @@
       "batteryBalancingHoldHours": "Håll mål-SOC i (timmar)",
       "batteryBalancingTimeWindow": "Tidsfönster",
       "dynamicHeadroomEnabled": "Aktivera dynamisk marginal",
-      "dynamicHeadroomRules": "Regler (JSON)"
+      "dynamicHeadroomRules": "Regler (JSON)",
+      "downtimeDetectionEnabled": "Aktivera detektering av driftstopp",
+      "downtimeDetectionTriggerHours": "Utlös efter (timmar)",
+      "downtimeDetectionAction": "Åtgärd"
     },
     "placeholder": {
       "name": "Namn"
@@ -43,17 +46,21 @@
       "battery": "Batteriladdning",
       "forecasting": "Förbrukningsprognos",
       "batteryBalancing": "Batteribalansering",
-      "dynamicHeadroom": "Dynamisk marginal"
+      "dynamicHeadroom": "Dynamisk marginal",
+      "downtime": "Detektering av driftstopp"
     },
     "option": {
       "forecastNone": "Ingen (reaktiv)",
       "forecastTimeBased": "Tidsbaserade mönster",
       "forecastHistorical": "Historisk inlärning",
-      "forecastExternal": "Extern (VRM/API)"
+      "forecastExternal": "Extern (VRM/API)",
+      "downtimeActionLog": "Logga varning",
+      "downtimeActionIgnore": "Ignorera"
     },
     "help": {
       "budgetBuffer": "Reserv för oväntade toppar",
-      "dynamicHeadroomRules": "JSON-array med {\"soc\": <nummer>, \"headroom\": <nummer>} objekt. 'soc' är exklusiv övre gräns."
+      "dynamicHeadroomRules": "JSON-array med {\"soc\": <nummer>, \"headroom\": <nummer>} objekt. 'soc' är exklusiv övre gräns.",
+      "downtimeDetection": "Varnar när data saknas under ett konfigurerbart antal timmar."
     }
   }
 }

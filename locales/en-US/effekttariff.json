@@ -31,7 +31,10 @@
       "batteryBalancingHoldHours": "Hold target SOC for (hours)",
       "batteryBalancingTimeWindow": "Time window",
       "dynamicHeadroomEnabled": "Enable dynamic headroom",
-      "dynamicHeadroomRules": "Rules (JSON)"
+      "dynamicHeadroomRules": "Rules (JSON)",
+      "downtimeDetectionEnabled": "Enable downtime detection",
+      "downtimeDetectionTriggerHours": "Trigger after (hours)",
+      "downtimeDetectionAction": "Action"
     },
     "placeholder": {
       "name": "Name"
@@ -43,17 +46,21 @@
       "battery": "Battery Charging",
       "forecasting": "Consumption Forecasting",
       "batteryBalancing": "Battery Balancing",
-      "dynamicHeadroom": "Dynamic Headroom"
+      "dynamicHeadroom": "Dynamic Headroom",
+      "downtime": "Downtime Detection"
     },
     "option": {
       "forecastNone": "None (reactive)",
       "forecastTimeBased": "Time-based patterns",
       "forecastHistorical": "Historical learning",
-      "forecastExternal": "External (VRM/API)"
+      "forecastExternal": "External (VRM/API)",
+      "downtimeActionLog": "Log warning",
+      "downtimeActionIgnore": "Ignore"
     },
     "help": {
       "budgetBuffer": "Reserve for unexpected peaks",
-      "dynamicHeadroomRules": "JSON array of {\"soc\": <number>, \"headroom\": <number>} objects. 'soc' is exclusive upper bound."
+      "dynamicHeadroomRules": "JSON array of {\"soc\": <number>, \"headroom\": <number>} objects. 'soc' is exclusive upper bound.",
+      "downtimeDetection": "Warns when data is missed for a configurable number of hours."
     }
   }
 }

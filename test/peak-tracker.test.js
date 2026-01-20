@@ -457,6 +457,100 @@ describe('peak-tracker', () => {
       expect(result.hourCompleted.wasNight).toBe(true)
       expect(result.hourCompleted.effectiveW).toBe(2000) // 50% of 4000
     })
+
+    it('should detect downtime when there is a significant gap in hours', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        downtimeDetection: {
+          enabled: true,
+          triggerHours: 2,
+          action: 'log'
+        }
+      })
+
+      state.currentMonth = 0
+      state.currentHour = 10 // Last known hour
+      state.currentHourSum = 1000 // Some data for the hour
+      state.currentHourSamples = 10
+
+      // Simulate a jump from 10:00 to 13:00 (3-hour gap, triggerHours is 2)
+      const now = new Date('2024-01-15T13:00:00Z')
+      const result = peakTracker.processGridPower(state, config, 2000, now)
+
+      expect(result.downtime).not.toBeNull()
+      expect(result.downtime.fromHour).toBe(10)
+      expect(result.downtime.toHour).toBe(13)
+      expect(result.downtime.missedHours).toBe(2) // 11:00, 12:00
+    })
+
+    it('should not detect downtime if the gap is below triggerHours', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        downtimeDetection: {
+          enabled: true,
+          triggerHours: 2,
+          action: 'log'
+        }
+      })
+
+      state.currentMonth = 0
+      state.currentHour = 10 // Last known hour
+      state.currentHourSum = 1000
+      state.currentHourSamples = 10
+
+      // Simulate a jump from 10:00 to 11:00 (1-hour gap)
+      const now = new Date('2024-01-15T11:00:00Z')
+      const result = peakTracker.processGridPower(state, config, 2000, now)
+
+      expect(result.downtime).toBeNull()
+    })
+
+    it('should not detect downtime if detection is disabled', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        downtimeDetection: {
+          enabled: false,
+          triggerHours: 2,
+          action: 'log'
+        }
+      })
+
+      state.currentMonth = 0
+      state.currentHour = 10
+      state.currentHourSum = 1000
+      state.currentHourSamples = 10
+
+      const now = new Date('2024-01-15T13:00:00Z')
+      const result = peakTracker.processGridPower(state, config, 2000, now)
+
+      expect(result.downtime).toBeNull()
+    })
+
+    it('should handle midnight rollover in downtime detection', () => {
+      const state = peakTracker.createInitialState()
+      const config = peakTracker.mergeConfig({
+        downtimeDetection: {
+          enabled: true,
+          triggerHours: 2,
+          action: 'log'
+        }
+      })
+
+      state.currentMonth = 0
+      state.currentHour = 23 // Last known hour on previous day
+      state.currentHourSum = 1000
+      state.currentHourSamples = 10
+
+      // Simulate a jump from 23:00 to 02:00 next day (3-hour gap: 00, 01, 02)
+      const now = new Date('2024-01-16T02:00:00Z')
+      const result = peakTracker.processGridPower(state, config, 2000, now)
+
+      expect(result.downtime).not.toBeNull()
+      expect(result.downtime.fromHour).toBe(23)
+      expect(result.downtime.toHour).toBe(2)
+      expect(result.downtime.missedHours).toBe(2) // 00:00, 01:00
+    })
+
   })
 
   // ============================================================================
