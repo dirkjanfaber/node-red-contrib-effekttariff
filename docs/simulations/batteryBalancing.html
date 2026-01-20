@@ -71,6 +71,56 @@
     }
     .verification.passed { background: #d4edda; }
     .verification.failed { background: #f8d7da; }
+    .analysis {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .analysis h2 { margin: 0 0 20px 0; font-size: 20px; }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: center;
+    }
+    .analysis-item { }
+    .analysis-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; margin-bottom: 5px; }
+    .analysis-value { font-size: 28px; font-weight: 700; }
+    .analysis-subtext { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+    .reduction { color: #4ade80; }
+    .analysis-explanation {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .analysis-explanation strong { color: #fbbf24; }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 12px 15px;
+      text-align: left;
+    }
+    .comparison-table th {
+      background: rgba(255,255,255,0.15);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .comparison-table td { border-top: 1px solid rgba(255,255,255,0.1); }
+    @media (max-width: 768px) {
+      .analysis-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -137,6 +187,74 @@
       </div>
     </div>
     
+
+    <div class="analysis">
+      <h2>Analysis: What Does This Simulation Prove?</h2>
+      <div class="analysis-explanation"><strong>What this proves:</strong> LiFePO4 and lithium batteries benefit from occasional full charges to
+      balance cell voltages. This simulation tests the battery balancing feature that charges to 100% SOC during
+      off-peak night hours (00:00-06:00) and holds at full charge for 2 hours. This maintains battery health without
+      interfering with peak shaving operations. The system only triggers balancing when SOC is already high (>95%)
+      and conditions are met, ensuring minimal impact on your electricity costs.</div>
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <div class="analysis-label">Without Peak Shaving</div>
+          <div class="analysis-value">1 kW</div>
+          <div class="analysis-subtext">Baseline peak average</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">With Peak Shaving</div>
+          <div class="analysis-value">1 kW</div>
+          <div class="analysis-subtext">Achieved peak average</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">Reduction</div>
+          <div class="analysis-value reduction">0%</div>
+          <div class="analysis-subtext">0 kW saved</div>
+        </div>
+      </div>
+      
+      <div class="analysis-explanation">
+        <strong>Monthly Cost Impact:</strong> Based on typical Swedish effekttariff rates (~50 SEK/kW/month),
+        this 0 kW reduction could save approximately
+        <strong>0 SEK/month</strong> on the power tariff portion of your grid fee.
+        
+        <br/><br/><strong>Battery Contribution:</strong> The battery discharged 0 hours
+        to help shave peaks, with an average discharge rate of 0.0 kW.
+        
+      </div>
+      
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Without System</th>
+            <th>With System</th>
+            <th>Improvement</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Peak Average</td>
+            <td>1 kW</td>
+            <td>1 kW</td>
+            <td class="reduction">No change</td>
+          </tr>
+          <tr>
+            <td>Highest Peak</td>
+            <td>1.00 kW</td>
+            <td>1.00 kW</td>
+            <td class="reduction">0%</td>
+          </tr>
+          <tr>
+            <td>Est. Monthly Cost*</td>
+            <td>50 SEK</td>
+            <td>50 SEK</td>
+            <td class="reduction">No savings</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 11px; opacity: 0.7; margin-top: 10px;">*Estimated using typical Swedish effekttariff rate of ~50 SEK/kW/month. Actual rates vary by provider.</div>
+    </div>
 
     <div class="charts-grid">
       <div class="chart-container">
@@ -301,7 +419,7 @@
         labels: ["2024-05-01T00:00:00.000Z","2024-05-01T01:00:00.000Z","2024-05-01T02:00:00.000Z","2024-05-01T03:00:00.000Z","2024-05-01T04:00:00.000Z","2024-05-01T05:00:00.000Z","2024-05-01T06:00:00.000Z","2024-05-01T07:00:00.000Z","2024-05-01T08:00:00.000Z","2024-05-01T09:00:00.000Z","2024-05-01T10:00:00.000Z","2024-05-01T11:00:00.000Z","2024-05-01T12:00:00.000Z","2024-05-01T13:00:00.000Z","2024-05-01T14:00:00.000Z","2024-05-01T15:00:00.000Z","2024-05-01T16:00:00.000Z","2024-05-01T17:00:00.000Z","2024-05-01T18:00:00.000Z","2024-05-01T19:00:00.000Z","2024-05-01T20:00:00.000Z","2024-05-01T21:00:00.000Z","2024-05-01T22:00:00.000Z","2024-05-01T23:00:00.000Z"],
         datasets: [{
           label: 'SOC (%)',
-          data: [40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40],
+          data: [96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96,96],
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           fill: true,

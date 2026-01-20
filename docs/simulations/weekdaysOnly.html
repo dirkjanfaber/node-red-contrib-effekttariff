@@ -71,6 +71,56 @@
     }
     .verification.passed { background: #d4edda; }
     .verification.failed { background: #f8d7da; }
+    .analysis {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .analysis h2 { margin: 0 0 20px 0; font-size: 20px; }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: center;
+    }
+    .analysis-item { }
+    .analysis-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; margin-bottom: 5px; }
+    .analysis-value { font-size: 28px; font-weight: 700; }
+    .analysis-subtext { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+    .reduction { color: #4ade80; }
+    .analysis-explanation {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .analysis-explanation strong { color: #fbbf24; }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 12px 15px;
+      text-align: left;
+    }
+    .comparison-table th {
+      background: rgba(255,255,255,0.15);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .comparison-table td { border-top: 1px solid rgba(255,255,255,0.1); }
+    @media (max-width: 768px) {
+      .analysis-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -107,6 +157,71 @@
       </div>
     </div>
     
+
+    <div class="analysis">
+      <h2>Analysis: What Does This Simulation Prove?</h2>
+      <div class="analysis-explanation"><strong>What this proves:</strong> Grid companies like Ellevio only measure peaks on weekdays (Monday-Friday).
+      Weekend consumption doesn't count toward your effekttariff, even if it's very high. This simulation has extremely
+      high weekend consumption (10 kW) and moderate weekday consumption (4 kW) to demonstrate that only weekday peaks
+      appear in the final calculation. This means you can safely run high-power activities on weekends without affecting
+      your monthly peak average - great for weekend EV charging or sauna sessions!</div>
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <div class="analysis-label">Without Peak Shaving</div>
+          <div class="analysis-value">4 kW</div>
+          <div class="analysis-subtext">Baseline peak average</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">With Peak Shaving</div>
+          <div class="analysis-value">4 kW</div>
+          <div class="analysis-subtext">Achieved peak average</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">Reduction</div>
+          <div class="analysis-value reduction">0%</div>
+          <div class="analysis-subtext">0 kW saved</div>
+        </div>
+      </div>
+      
+      <div class="analysis-explanation">
+        <strong>Monthly Cost Impact:</strong> Based on typical Swedish effekttariff rates (~50 SEK/kW/month),
+        this 0 kW reduction could save approximately
+        <strong>0 SEK/month</strong> on the power tariff portion of your grid fee.
+        
+      </div>
+      
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Without System</th>
+            <th>With System</th>
+            <th>Improvement</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Peak Average</td>
+            <td>4 kW</td>
+            <td>4 kW</td>
+            <td class="reduction">No change</td>
+          </tr>
+          <tr>
+            <td>Highest Peak</td>
+            <td>4.00 kW</td>
+            <td>4.00 kW</td>
+            <td class="reduction">0%</td>
+          </tr>
+          <tr>
+            <td>Est. Monthly Cost*</td>
+            <td>200 SEK</td>
+            <td>200 SEK</td>
+            <td class="reduction">No savings</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 11px; opacity: 0.7; margin-top: 10px;">*Estimated using typical Swedish effekttariff rate of ~50 SEK/kW/month. Actual rates vary by provider.</div>
+    </div>
 
     <div class="charts-grid">
       <div class="chart-container">

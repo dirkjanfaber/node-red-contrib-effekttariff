@@ -71,6 +71,56 @@
     }
     .verification.passed { background: #d4edda; }
     .verification.failed { background: #f8d7da; }
+    .analysis {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .analysis h2 { margin: 0 0 20px 0; font-size: 20px; }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: center;
+    }
+    .analysis-item { }
+    .analysis-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; margin-bottom: 5px; }
+    .analysis-value { font-size: 28px; font-weight: 700; }
+    .analysis-subtext { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+    .reduction { color: #4ade80; }
+    .analysis-explanation {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .analysis-explanation strong { color: #fbbf24; }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 12px 15px;
+      text-align: left;
+    }
+    .comparison-table th {
+      background: rgba(255,255,255,0.15);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .comparison-table td { border-top: 1px solid rgba(255,255,255,0.1); }
+    @media (max-width: 768px) {
+      .analysis-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -98,7 +148,7 @@
         </div>
         <div class="meta-item">
           <div class="meta-label">Average Power</div>
-          <div class="meta-value">3.96 kW</div>
+          <div class="meta-value">2.87 kW</div>
         </div>
         <div class="meta-item">
           <div class="meta-label">Peak Average</div>
@@ -137,6 +187,74 @@
       </div>
     </div>
     
+
+    <div class="analysis">
+      <h2>Analysis: What Does This Simulation Prove?</h2>
+      <div class="analysis-explanation"><strong>What this proves:</strong> The "headroom" is a safety buffer below your target limit - it gives your
+      ESS (Energy Storage System) time to react before you exceed the limit. With dynamic headroom, this buffer adjusts
+      based on battery SOC: when SOC is low (<20%), headroom is high (1.0 kW) because the battery can't help much.
+      When SOC is high (>80%), headroom is low (0.2 kW) because the battery can quickly discharge if needed. This
+      maximizes your usable power while maintaining safety. Watch how limits change throughout the day as SOC varies.</div>
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <div class="analysis-label">Without Peak Shaving</div>
+          <div class="analysis-value">4 kW</div>
+          <div class="analysis-subtext">Baseline peak average</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">With Peak Shaving</div>
+          <div class="analysis-value">4 kW</div>
+          <div class="analysis-subtext">Achieved peak average</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">Reduction</div>
+          <div class="analysis-value reduction">0%</div>
+          <div class="analysis-subtext">0 kW saved</div>
+        </div>
+      </div>
+      
+      <div class="analysis-explanation">
+        <strong>Monthly Cost Impact:</strong> Based on typical Swedish effekttariff rates (~50 SEK/kW/month),
+        this 0 kW reduction could save approximately
+        <strong>0 SEK/month</strong> on the power tariff portion of your grid fee.
+        
+        <br/><br/><strong>Battery Contribution:</strong> The battery discharged 13 hours
+        to help shave peaks, with an average discharge rate of 2.0 kW.
+        
+      </div>
+      
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Without System</th>
+            <th>With System</th>
+            <th>Improvement</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Peak Average</td>
+            <td>4 kW</td>
+            <td>4 kW</td>
+            <td class="reduction">No change</td>
+          </tr>
+          <tr>
+            <td>Highest Peak</td>
+            <td>4.00 kW</td>
+            <td>4.00 kW</td>
+            <td class="reduction">0%</td>
+          </tr>
+          <tr>
+            <td>Est. Monthly Cost*</td>
+            <td>200 SEK</td>
+            <td>200 SEK</td>
+            <td class="reduction">No savings</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size: 11px; opacity: 0.7; margin-top: 10px;">*Estimated using typical Swedish effekttariff rate of ~50 SEK/kW/month. Actual rates vary by provider.</div>
+    </div>
 
     <div class="charts-grid">
       <div class="chart-container">
@@ -179,7 +297,7 @@
           <tr>
             <td>1</td>
             <td>2024-04-01</td>
-            <td>8:00</td>
+            <td>7:00</td>
             <td>4.00</td>
             <td>4.00</td>
           </tr>
@@ -205,7 +323,7 @@
         datasets: [
           {
             label: 'Consumption (W)',
-            data: [4000,4000,4000,4000,4000,4000,4000,3000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000],
+            data: [4000,4000,4000,4000,4000,4000,4000,4000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,4000,4000],
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             fill: true,
@@ -214,7 +332,7 @@
           },
           {
             label: 'Effective (W)',
-            data: [4000,4000,4000,4000,4000,4000,4000,3000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000,4000],
+            data: [4000,4000,4000,4000,4000,4000,4000,4000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,2000,4000,4000],
             borderColor: '#10b981',
             backgroundColor: 'transparent',
             borderDash: [5, 5],
@@ -263,7 +381,7 @@
     new Chart(document.getElementById('peaksChart'), {
       type: 'bar',
       data: {
-        labels: ["2024-04-01 8:00"],
+        labels: ["2024-04-01 7:00"],
         datasets: [{
           label: 'Effective Power (W)',
           data: [4000],
@@ -301,7 +419,7 @@
         labels: ["2024-03-31T22:00:00.000Z","2024-03-31T23:00:00.000Z","2024-04-01T00:00:00.000Z","2024-04-01T01:00:00.000Z","2024-04-01T02:00:00.000Z","2024-04-01T03:00:00.000Z","2024-04-01T04:00:00.000Z","2024-04-01T05:00:00.000Z","2024-04-01T06:00:00.000Z","2024-04-01T07:00:00.000Z","2024-04-01T08:00:00.000Z","2024-04-01T09:00:00.000Z","2024-04-01T10:00:00.000Z","2024-04-01T11:00:00.000Z","2024-04-01T12:00:00.000Z","2024-04-01T13:00:00.000Z","2024-04-01T14:00:00.000Z","2024-04-01T15:00:00.000Z","2024-04-01T16:00:00.000Z","2024-04-01T17:00:00.000Z","2024-04-01T18:00:00.000Z","2024-04-01T19:00:00.000Z","2024-04-01T20:00:00.000Z","2024-04-01T21:00:00.000Z"],
         datasets: [{
           label: 'SOC (%)',
-          data: [30,30,30,30,30,30,30,26.7,20,20,20,20,20,20,20,20,20,20,20,20,20,20.2,21.1,22.1],
+          data: [10.5,10.6,10.7,10.8,11.1,11.7,13.3,10,46.7,46.7,46.7,46.7,46.7,46.7,46.7,46.7,86.7,86.7,86.7,86.7,86.7,90,90,90],
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           fill: true,
@@ -325,7 +443,7 @@
         labels: ["2024-03-31T22:00:00.000Z","2024-03-31T23:00:00.000Z","2024-04-01T00:00:00.000Z","2024-04-01T01:00:00.000Z","2024-04-01T02:00:00.000Z","2024-04-01T03:00:00.000Z","2024-04-01T04:00:00.000Z","2024-04-01T05:00:00.000Z","2024-04-01T06:00:00.000Z","2024-04-01T07:00:00.000Z","2024-04-01T08:00:00.000Z","2024-04-01T09:00:00.000Z","2024-04-01T10:00:00.000Z","2024-04-01T11:00:00.000Z","2024-04-01T12:00:00.000Z","2024-04-01T13:00:00.000Z","2024-04-01T14:00:00.000Z","2024-04-01T15:00:00.000Z","2024-04-01T16:00:00.000Z","2024-04-01T17:00:00.000Z","2024-04-01T18:00:00.000Z","2024-04-01T19:00:00.000Z","2024-04-01T20:00:00.000Z","2024-04-01T21:00:00.000Z"],
         datasets: [{
           label: 'Charge Rate (W)',
-          data: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100,100,101],
+          data: [286,333,400,500,667,1000,2000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
           borderColor: '#8b5cf6',
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
           fill: true,

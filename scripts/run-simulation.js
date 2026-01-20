@@ -148,7 +148,7 @@ ${colorize('Examples:', 'cyan')}
 }
 
 function runSingleScenario (key, scenarioConfig, overrides = {}) {
-  const { name, description, config, startDate, durationDays, powerGenerator, expectations } = scenarioConfig
+  const { name, description, analysis, config, startDate, durationDays, powerGenerator, batterySocGenerator, expectations } = scenarioConfig
 
   // Merge config overrides
   const mergedConfig = { ...config, ...overrides.config }
@@ -156,7 +156,7 @@ function runSingleScenario (key, scenarioConfig, overrides = {}) {
   // Apply simulation overrides
   const finalDuration = overrides.simulation.durationDays || durationDays
   const finalSamplesPerHour = overrides.simulation.samplesPerHour || 6
-  const initialSoc = overrides.simulation.initialSoc
+  const initialSoc = overrides.simulation.initialSoc !== undefined ? overrides.simulation.initialSoc : scenarioConfig.initialSoc
 
   // Show overrides in output
   const hasOverrides = Object.keys(overrides.config).length > 0 || Object.keys(overrides.simulation).length > 0
@@ -175,6 +175,7 @@ function runSingleScenario (key, scenarioConfig, overrides = {}) {
     startDate,
     durationDays: finalDuration,
     powerGenerator,
+    batterySocGenerator,
     initialSoc,
     verbose,
     samplesPerHour: finalSamplesPerHour
@@ -192,7 +193,7 @@ function runSingleScenario (key, scenarioConfig, overrides = {}) {
     }
   }
 
-  return { key, name, description, results, verification }
+  return { key, name, description, analysis, results, verification }
 }
 
 function runAllScenarios () {
@@ -260,7 +261,7 @@ if (!scenario) {
   process.exit(1)
 }
 
-const { name, description, results, verification } = runSingleScenario(scenarioArg, scenario, configOverrides)
+const { name, description, analysis, results, verification } = runSingleScenario(scenarioArg, scenario, configOverrides)
 
 // Handle exports
 if (exportCsv || exportHtml) {
@@ -282,6 +283,7 @@ if (exportCsv || exportHtml) {
     generateHTMLReport(results, htmlPath, {
       scenarioName: name,
       scenarioDescription: description,
+      scenarioAnalysis: analysis,
       verification
     })
     console.log(colorize('HTML report:', 'cyan'), htmlPath)
