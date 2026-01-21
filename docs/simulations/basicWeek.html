@@ -184,14 +184,18 @@
         </div>
       </div>
       <div class="analysis-explanation">
-        <strong>No Battery Configured:</strong> This simulation demonstrates peak tracking and provider rule validation
-        without active peak shaving. The system correctly identifies your top 3 consumption peaks
-        and calculates that your current effektavgift would be approximately <strong>250 SEK/month</strong>.
+        <strong>Why No Savings?</strong> This simulation has no battery configured. The effekttariff node outputs a
+        current limit signal, but without a battery to discharge, there's nothing to cover the difference when
+        consumption exceeds the limit. The grid must supply all power, so peaks cannot be reduced.
         <br/><br/>
-        <strong>Potential with Battery:</strong> Adding a home battery could reduce these peaks significantly.
-        For example, a 10 kWh battery with 3 kW discharge rate could potentially reduce your peak average by 30-50%,
-        saving <strong>100-125 SEK/month</strong>.
-        Run the <code>batteryCharging</code> scenario to see battery-assisted peak shaving in action.
+        <strong>What This Shows:</strong> The system correctly tracks your top 3 peaks during
+        peak hours and calculates your effektavgift at approximately <strong>250 SEK/month</strong>.
+        This monitoring alone is valuable for understanding your consumption patterns.
+        <br/><br/>
+        <strong>To Actually Reduce Peaks:</strong> You need a battery that can discharge during high-consumption moments.
+        The node tells your ESS "limit grid to X amps" - the battery covers the rest. See the <code>batteryCharging</code>
+        scenario for a 40-50% reduction example, potentially saving
+        <strong>100-125 SEK/month</strong>.
       </div>
       <table class="comparison-table">
         <thead>
