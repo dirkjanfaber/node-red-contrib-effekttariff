@@ -47,6 +47,9 @@ module.exports = function (RED) {
         triggerHours: parseInt(config.downtimeDetectionTriggerHours) || 2,
         action: config.downtimeDetectionAction || 'log'
       },
+      // Learning phase settings
+      learningMode: config.learningMode || 'learning',
+      previousMonthCarryover: parseInt(config.previousMonthCarryover) || 80,
       // Debug settings
       debugMode: config.debugMode || false
     })
@@ -121,6 +124,7 @@ module.exports = function (RED) {
           inPeakSeason: result.inPeakSeason,
           inPeakHours: result.inPeakHours,
           isLearning: result.isLearning,
+          usingCarryover: result.usingCarryover,
           currentHour: result.currentHour,
           currentHourAvgW: Math.round(result.currentHourAvgW),
           targetLimitW: result.targetLimitW,
@@ -128,7 +132,8 @@ module.exports = function (RED) {
           limitReason: result.limitReason,
           peakAvgW: Math.round(result.peakAvgW),
           peaksRecorded: result.topPeaks.length,
-          outputChanged: result.outputChanged
+          outputChanged: result.outputChanged,
+          previousMonthPeakAvgW: state.previousMonthPeakAvgW
         })
 
         // Battery status variables
@@ -275,6 +280,7 @@ module.exports = function (RED) {
           inPeakSeason: result.inPeakSeason,
           inPeakHours: result.inPeakHours,
           isLearning: result.isLearning,
+          usingCarryover: result.usingCarryover || false,
           currentHour: result.currentHour,
           currentHourAvgW: Math.round(result.currentHourAvgW),
           currentHourAvgKw: result.currentHourAvgW / 1000,

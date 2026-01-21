@@ -78,7 +78,7 @@ const categories = {
   basic: {
     title: 'Basic Scenarios',
     icon: '📊',
-    scenarios: ['basicWeek', 'fullMonth', 'highSpikes', 'stressTest']
+    scenarios: ['basicWeek', 'fullMonth', 'highSpikes', 'stressTest', 'learningCarryover']
   },
   providers: {
     title: 'Swedish Provider Configurations',

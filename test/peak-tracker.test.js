@@ -944,4 +944,161 @@ describe('peak-tracker', () => {
       expect(result.available).toBe(false)
     })
   })
+
+  describe('Learning Phase Carryover', () => {
+    let state
+
+    beforeEach(() => {
+      state = peakTracker.createInitialState()
+    })
+
+    describe('Month reset preserves previous peak average', () => {
+      it('should store previousMonthPeakAvgW on month reset', () => {
+        const config = peakTracker.mergeConfig({
+          peakCount: 3,
+          peakSeasonOnly: false,
+          learningMode: 'carryover',
+          previousMonthCarryover: 80
+        })
+
+        // Simulate January with recorded peaks
+        state.currentMonth = 0 // January
+        state.peaks = [
+          { date: '2024-01-15', hour: 18, value: 5000, effective: 5000 },
+          { date: '2024-01-16', hour: 19, value: 4500, effective: 4500 },
+          { date: '2024-01-17', hour: 18, value: 4000, effective: 4000 }
+        ]
+
+        // Process a measurement in February (triggers month reset)
+        const febDate = new Date('2024-02-01T10:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, febDate, null)
+
+        expect(result.monthReset).toBe(true)
+        expect(result.previousMonthPeakAvgW).toBe(4500) // Average of 5000, 4500, 4000
+        expect(state.previousMonthPeakAvgW).toBe(4500)
+        expect(state.peaks).toEqual([]) // Peaks should be reset
+      })
+    })
+
+    describe('Carryover mode during learning phase', () => {
+      it('should use carryover limit during learning when previousMonthPeakAvgW is available', () => {
+        const config = peakTracker.mergeConfig({
+          peakCount: 3,
+          peakSeasonOnly: false,
+          minimumLimitKw: 2,
+          headroomKw: 0.3,
+          learningMode: 'carryover',
+          previousMonthCarryover: 80
+        })
+
+        state.currentMonth = 1 // February
+        state.previousMonthPeakAvgW = 5000 // 5 kW from January
+        state.peaks = [] // No peaks yet (learning phase)
+
+        const now = new Date('2024-02-01T10:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, now, null)
+
+        expect(result.isLearning).toBe(true)
+        expect(result.usingCarryover).toBe(true)
+        // Target should be 80% of 5000W = 4000W, minus headroom 300W = 3700W
+        expect(result.targetLimitW).toBe(3700)
+        expect(result.limitReason).toContain('80% of prev month')
+      })
+
+      it('should fall back to minimum limit when no previous month data', () => {
+        const config = peakTracker.mergeConfig({
+          peakCount: 3,
+          peakSeasonOnly: false,
+          minimumLimitKw: 4,
+          learningMode: 'carryover',
+          previousMonthCarryover: 80
+        })
+
+        state.currentMonth = 1 // February
+        state.previousMonthPeakAvgW = null // No data from previous month
+        state.peaks = []
+
+        const now = new Date('2024-02-01T10:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, now, null)
+
+        expect(result.isLearning).toBe(true)
+        expect(result.usingCarryover).toBe(false)
+        expect(result.targetLimitW).toBeNull()
+      })
+
+      it('should respect minimum limit even with carryover', () => {
+        const config = peakTracker.mergeConfig({
+          peakCount: 3,
+          peakSeasonOnly: false,
+          minimumLimitKw: 4, // 4000W minimum
+          headroomKw: 0.3,
+          learningMode: 'carryover',
+          previousMonthCarryover: 50 // 50%
+        })
+
+        state.currentMonth = 1
+        state.previousMonthPeakAvgW = 3000 // 3 kW - 50% would be 1.5 kW, below minimum
+        state.peaks = []
+
+        const now = new Date('2024-02-01T10:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, now, null)
+
+        expect(result.isLearning).toBe(true)
+        expect(result.usingCarryover).toBe(true)
+        // 50% of 3000W = 1500W, but minimum is 4000W
+        expect(result.targetLimitW).toBe(4000)
+      })
+    })
+
+    describe('Default learning mode behavior', () => {
+      it('should use minimum limit during learning when learningMode is "learning"', () => {
+        const config = peakTracker.mergeConfig({
+          peakCount: 3,
+          peakSeasonOnly: false,
+          minimumLimitKw: 4,
+          learningMode: 'learning' // Default mode
+        })
+
+        state.currentMonth = 1
+        state.previousMonthPeakAvgW = 5000 // Even with previous data available
+        state.peaks = []
+
+        const now = new Date('2024-02-01T10:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, now, null)
+
+        expect(result.isLearning).toBe(true)
+        expect(result.usingCarryover).toBe(false)
+        expect(result.targetLimitW).toBeNull() // No target in default learning mode
+      })
+    })
+
+    describe('Transition from learning to normal operation', () => {
+      it('should switch from carryover to normal once enough peaks recorded', () => {
+        const config = peakTracker.mergeConfig({
+          peakCount: 3,
+          peakSeasonOnly: false,
+          minimumLimitKw: 2,
+          headroomKw: 0.3,
+          learningMode: 'carryover',
+          previousMonthCarryover: 80
+        })
+
+        state.currentMonth = 1
+        state.previousMonthPeakAvgW = 5000
+        state.peaks = [
+          { date: '2024-02-01', hour: 18, value: 3500, effective: 3500 },
+          { date: '2024-02-02', hour: 19, value: 3200, effective: 3200 },
+          { date: '2024-02-03', hour: 18, value: 3000, effective: 3000 }
+        ]
+
+        const now = new Date('2024-02-04T10:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, now, null)
+
+        expect(result.isLearning).toBe(false)
+        expect(result.usingCarryover).toBe(false)
+        // Should now use lowest top peak (3000) minus headroom
+        expect(result.targetLimitW).toBe(2700) // 3000 - 300
+      })
+    })
+  })
 })

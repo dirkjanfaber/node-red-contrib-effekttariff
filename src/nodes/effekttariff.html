@@ -53,6 +53,10 @@
       downtimeDetectionTriggerHours: { value: 2, validate: RED.validators.number() },
       downtimeDetectionAction: { value: 'log' },
 
+      // Learning phase settings
+      learningMode: { value: 'learning' },
+      previousMonthCarryover: { value: 80, validate: RED.validators.number() },
+
       // Debug settings
       debugMode: { value: false }
     },
@@ -163,6 +167,16 @@
 
       $('#node-input-downtimeDetectionEnabled').on('change', toggleDowntimeDetectionFields)
       toggleDowntimeDetectionFields()
+
+      // Toggle learning mode carryover fields visibility
+      function toggleLearningModeFields () {
+        const mode = $('#node-input-learningMode').val()
+        const showCarryover = mode === 'carryover'
+        $('.learning-carryover-row').toggle(showCarryover)
+      }
+
+      $('#node-input-learningMode').on('change', toggleLearningModeFields)
+      toggleLearningModeFields()
     }
   })
 </script>
@@ -230,6 +244,23 @@
   <div class="form-row">
     <label for="node-input-headroom"><i class="fa fa-arrows-v"></i> <span data-i18n="effekttariff.label.headroom">Headroom (kW)</span></label>
     <input type="number" id="node-input-headroom" min="0" max="2" step="0.1" style="width:80px">
+  </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.learningMode">Learning Phase</h4>
+
+  <div class="form-row">
+    <label for="node-input-learningMode"><i class="fa fa-graduation-cap"></i> <span data-i18n="effekttariff.label.learningMode">Initial limit mode</span></label>
+    <select id="node-input-learningMode" style="width:200px">
+      <option value="learning" data-i18n="effekttariff.option.learningModeDefault">Use minimum limit</option>
+      <option value="carryover" data-i18n="effekttariff.option.learningModeCarryover">Use previous month</option>
+    </select>
+  </div>
+
+  <div class="form-row learning-carryover-row">
+    <label for="node-input-previousMonthCarryover"><i class="fa fa-percent"></i> <span data-i18n="effekttariff.label.previousMonthCarryover">Carryover (%)</span></label>
+    <input type="number" id="node-input-previousMonthCarryover" min="10" max="100" style="width:80px">
+    <span style="margin-left:10px; color:#666; font-size:11px">Percentage of previous month's peak average</span>
   </div>
 
   <hr>
@@ -514,8 +545,19 @@
 
   <h4>Learning Phase</h4>
   <p>At the start of each month, the node enters a learning phase until it has
-  recorded enough peaks. During learning, it outputs the minimum limit to
-  prevent establishing unnecessarily high peaks.</p>
+  recorded enough peaks. You can configure how the node behaves during this phase:</p>
+
+  <ul>
+    <li><b>Use minimum limit</b> (default): Outputs the configured minimum limit
+    to prevent establishing unnecessarily high peaks. Safe but conservative.</li>
+    <li><b>Use previous month</b>: Starts with a percentage (e.g., 80%) of last
+    month's peak average. This provides continuity and prevents the need to
+    "re-learn" each month. Recommended for stable consumption patterns.</li>
+  </ul>
+
+  <p>The carryover percentage determines how aggressive the initial limit is.
+  80% is a good default - it gives some headroom for variation while still
+  maintaining reasonable limits.</p>
 
   <h4>Battery Charging</h4>
   <p>When battery charging is enabled, the node reads SOC from global context
