@@ -5,111 +5,342 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Effekttariff Simulation Reports</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 20px;
       background: #f5f5f5;
     }
-    h1 { color: #333; }
+    h1 { color: #333; margin-bottom: 10px; }
+    .intro { color: #666; margin-bottom: 20px; line-height: 1.5; }
+    .summary-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      text-align: center;
+    }
+    .summary-item { }
+    .summary-value { font-size: 28px; font-weight: 700; }
+    .summary-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
+    .category {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+    }
+    .category:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+    .category h2 {
+      color: #444;
+      font-size: 1.1em;
+      margin-bottom: 15px;
+    }
     .scenario-list {
       list-style: none;
       padding: 0;
+      margin: 0;
     }
     .scenario-list li {
       background: white;
       margin: 10px 0;
       padding: 15px 20px;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .scenario-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
     }
     .scenario-list a {
       color: #0066cc;
       text-decoration: none;
+      font-weight: 600;
+      font-size: 1.05em;
+    }
+    .scenario-list a:hover { text-decoration: underline; }
+    .duration {
+      color: #888;
+      font-size: 0.8em;
+    }
+    .scenario-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8em;
       font-weight: 500;
     }
-    .scenario-list a:hover {
-      text-decoration: underline;
+    .badge-savings {
+      background: #d4edda;
+      color: #155724;
+    }
+    .badge-tracking {
+      background: #e2e3e5;
+      color: #383d41;
+    }
+    .badge-neutral {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .badge-error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .saving-detail {
+      color: #28a745;
+      font-size: 0.85em;
+      font-weight: 500;
     }
     .description {
       color: #666;
       font-size: 0.9em;
-      margin-top: 5px;
     }
     .meta {
       color: #999;
       font-size: 0.8em;
-      margin-top: 20px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
     }
+    .meta a { color: #666; }
   </style>
 </head>
 <body>
   <h1>🔌 Effekttariff Simulation Reports</h1>
-  <p>Interactive simulation reports for the Swedish effekttariff peak shaving system.</p>
+  <p class="intro">
+    Interactive simulation reports for the Swedish effekttariff peak shaving system.
+    Each report includes analysis showing baseline vs achieved peaks, charts, and battery behavior.
+  </p>
 
-  <h2>Available Scenarios</h2>
-  <ul class="scenario-list">
-    <li>
-      <a href="basicWeek.html">Basic Week</a>
-      <div class="description">One week of typical Swedish household consumption (7 days)</div>
-    </li>
-    <li>
-      <a href="fullMonth.html">Full Month Cycle</a>
-      <div class="description">Complete month to verify peak reset behavior (35 days)</div>
-    </li>
-    <li>
-      <a href="highSpikes.html">High Consumption Spikes</a>
-      <div class="description">Baseline with EV charging/sauna spikes (14 days)</div>
-    </li>
-    <li>
-      <a href="nightDiscount.html">Night Discount</a>
-      <div class="description">Tests night discount (nattsänkning) feature (7 days)</div>
-    </li>
-    <li>
-      <a href="weekdaysOnly.html">Weekdays Only</a>
-      <div class="description">Weekday-only limit enforcement like Ellevio (14 days)</div>
-    </li>
-    <li>
-      <a href="winterSeason.html">Winter Season</a>
-      <div class="description">Winter season filtering Nov-Mar (60 days)</div>
-    </li>
-    <li>
-      <a href="singlePhase.html">Single Phase Installation</a>
-      <div class="description">Single phase home configuration (7 days)</div>
-    </li>
-    <li>
-      <a href="minimumLimit.html">Minimum Limit Enforcement</a>
-      <div class="description">Very low consumption, minimum limit test (7 days)</div>
-    </li>
-    <li>
-      <a href="jonkoping.html">Jönköping Energi Style</a>
-      <div class="description">2 peaks, all year configuration (14 days)</div>
-    </li>
-    <li>
-      <a href="stressTest.html">Stress Test</a>
-      <div class="description">High variability consumption (30 days)</div>
-    </li>
-    <li>
-      <a href="batteryCharging.html">Battery Charging</a>
-      <div class="description">Smart battery charging during off-peak hours (7 days)</div>
-    </li>
-    <li>
-      <a href="batteryBalancing.html">Battery Balancing</a>
-      <div class="description">Periodic battery balancing feature (1 day)</div>
-    </li>
-    <li>
-      <a href="dynamicHeadroom.html">Dynamic Headroom</a>
-      <div class="description">Dynamic headroom based on battery SOC (1 day)</div>
-    </li>
-    <li>
-      <a href="downtimeDetection.html">Downtime Detection</a>
-      <div class="description">System downtime detection with data gaps (3 days)</div>
-    </li>
-  </ul>
+  <div class="summary-box">
+    <div class="summary-item">
+      <div class="summary-value">14</div>
+      <div class="summary-label">Scenarios</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value">3</div>
+      <div class="summary-label">With Battery</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value">27%</div>
+      <div class="summary-label">Avg Reduction</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value">~50 SEK</div>
+      <div class="summary-label">Avg Monthly Saving</div>
+    </div>
+  </div>
 
-  <p class="meta">Generated automatically by GitHub Actions.
-    <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">View source on GitHub</a>
+  
+  <div class="category">
+    <h2>📊 Basic Scenarios</h2>
+    <ul class="scenario-list">
+      
+      <li>
+        <div class="scenario-header">
+          <a href="basicWeek.html">Basic Week</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">5 kW tracked</span>
+          
+        </div>
+        <div class="description">One week of typical Swedish household consumption</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="fullMonth.html">Full Month Cycle</a>
+          <span class="duration">35 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">4.5 kW tracked</span>
+          
+        </div>
+        <div class="description">Complete month to verify peak reset behavior</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="highSpikes.html">High Consumption Spikes</a>
+          <span class="duration">14 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">8 kW tracked</span>
+          
+        </div>
+        <div class="description">Baseline with occasional high power spikes (EV charging, sauna)</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="stressTest.html">Stress Test</a>
+          <span class="duration">30 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">5.6 kW tracked</span>
+          
+        </div>
+        <div class="description">High variability consumption to test system stability</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🇸🇪 Swedish Provider Configurations</h2>
+    <ul class="scenario-list">
+      
+      <li>
+        <div class="scenario-header">
+          <a href="nightDiscount.html">Night Discount</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">3 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests night discount feature (nattsänkning) like Kungälv Energi</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="weekdaysOnly.html">Weekdays Only</a>
+          <span class="duration">14 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">4 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests weekday-only limit enforcement like Ellevio</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="winterSeason.html">Winter Season Only</a>
+          <span class="duration">60 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">5.5 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests winter season filtering (November to March)</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="jonkoping.html">Jönköping Energi Style</a>
+          <span class="duration">14 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">5 kW tracked</span>
+          
+        </div>
+        <div class="description">Configuration matching Jönköping Energi (2 peaks, all year)</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🔧 Installation Types</h2>
+    <ul class="scenario-list">
+      
+      <li>
+        <div class="scenario-header">
+          <a href="singlePhase.html">Single Phase Installation</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">2.5 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests current limit calculation for single phase homes</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="minimumLimit.html">Minimum Limit Enforcement</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">1 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests that minimum limit is respected with very low consumption</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🔋 Battery Features</h2>
+    <ul class="scenario-list">
+      
+      <li>
+        <div class="scenario-header">
+          <a href="batteryCharging.html">Battery Charging</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-savings">-43% (1.5 kW saved)</span>
+          <span class="saving-detail">~75 SEK/month</span>
+        </div>
+        <div class="description">Tests smart battery charging to prepare for peak shaving</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="batteryBalancing.html">Battery Balancing</a>
+          <span class="duration">1 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-neutral">1 kW</span>
+          
+        </div>
+        <div class="description">Tests the periodic battery balancing feature.</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="dynamicHeadroom.html">Dynamic Headroom</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-savings">-38% (1.5 kW saved)</span>
+          <span class="saving-detail">~76 SEK/month</span>
+        </div>
+        <div class="description">Tests dynamic adjustment of headroom based on battery SOC.</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🛡️ Resilience Features</h2>
+    <ul class="scenario-list">
+      
+      <li>
+        <div class="scenario-header">
+          <a href="downtimeDetection.html">Downtime Detection</a>
+          <span class="duration">3 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">4 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests the downtime detection feature with a simulated data gap.</div>
+      </li>
+    </ul>
+  </div>
+
+  <p class="meta">
+    Generated from <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">node-red-contrib-effekttariff</a>.
+    Reports are updated when code changes are pushed to the main branch.
   </p>
 </body>
 </html>
