@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation & Simulations
+    url: https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/index.html
+    about: View simulation reports and documentation before opening an issue
+  - name: Node-RED Forum
+    url: https://discourse.nodered.org/
+    about: Ask general Node-RED questions on the community forum

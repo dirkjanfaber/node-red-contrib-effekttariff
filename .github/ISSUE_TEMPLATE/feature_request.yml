@@ -1,0 +1,91 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe what you'd like to see added to node-red-contrib-effekttariff.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: |
+        Describe the problem you're trying to solve or the use case for this feature.
+        Is this related to a limitation you've encountered?
+      placeholder: I want to be able to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you'd like this feature to work.
+      placeholder: The node should...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: I've tried...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What area of the node does this relate to?
+      options:
+        - Peak tracking / calculation
+        - Battery control / charging
+        - Swedish provider support
+        - Configuration options
+        - Output messages / data
+        - Integration (Victron, other systems)
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: grid-company
+    attributes:
+      label: Swedish Grid Company
+      description: Is this feature specific to a grid company's tariff rules?
+      options:
+        - Not specific to any provider
+        - Ellevio
+        - Vattenfall
+        - E.ON
+        - Kungälv Energi
+        - Jönköping Energi
+        - Göteborg Energi
+        - Other (specify in description)
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, links to documentation, or examples that would help explain this feature.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be interested in contributing to this feature?
+      options:
+        - label: I would be willing to help implement this feature
+          required: false
+        - label: I can help test this feature
+          required: false
