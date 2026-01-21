@@ -37,134 +37,79 @@
       font-size: 0.9em;
       margin-top: 5px;
     }
-    .duration {
-      color: #999;
-      font-size: 0.8em;
-    }
     .meta {
       color: #999;
       font-size: 0.8em;
       margin-top: 20px;
     }
-    .category {
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-    }
-    .category h2 {
-      color: #555;
-      font-size: 1.1em;
-    }
   </style>
 </head>
 <body>
   <h1>🔌 Effekttariff Simulation Reports</h1>
-  <p>Interactive simulation reports for the Swedish effekttariff peak shaving system.
-     Each report includes charts showing consumption, limits, peaks, and battery behavior.</p>
+  <p>Interactive simulation reports for the Swedish effekttariff peak shaving system.</p>
 
-  <div class="category">
-    <h2>📊 Basic Scenarios</h2>
-    <ul class="scenario-list">
-      <li>
-        <a href="basicWeek.html">Basic Week</a>
-        <span class="duration">7 days</span>
-        <div class="description">One week of typical Swedish household consumption</div>
-      </li>
-      <li>
-        <a href="fullMonth.html">Full Month Cycle</a>
-        <span class="duration">35 days</span>
-        <div class="description">Complete month to verify peak reset behavior</div>
-      </li>
-      <li>
-        <a href="highSpikes.html">High Consumption Spikes</a>
-        <span class="duration">14 days</span>
-        <div class="description">Baseline with EV charging/sauna spikes</div>
-      </li>
-      <li>
-        <a href="stressTest.html">Stress Test</a>
-        <span class="duration">30 days</span>
-        <div class="description">High variability consumption to test system stability</div>
-      </li>
-    </ul>
-  </div>
+  <h2>Available Scenarios</h2>
+  <ul class="scenario-list">
+    <li>
+      <a href="basicWeek.html">Basic Week</a>
+      <div class="description">One week of typical Swedish household consumption (7 days)</div>
+    </li>
+    <li>
+      <a href="fullMonth.html">Full Month Cycle</a>
+      <div class="description">Complete month to verify peak reset behavior (35 days)</div>
+    </li>
+    <li>
+      <a href="highSpikes.html">High Consumption Spikes</a>
+      <div class="description">Baseline with EV charging/sauna spikes (14 days)</div>
+    </li>
+    <li>
+      <a href="nightDiscount.html">Night Discount</a>
+      <div class="description">Tests night discount (nattsänkning) feature (7 days)</div>
+    </li>
+    <li>
+      <a href="weekdaysOnly.html">Weekdays Only</a>
+      <div class="description">Weekday-only limit enforcement like Ellevio (14 days)</div>
+    </li>
+    <li>
+      <a href="winterSeason.html">Winter Season</a>
+      <div class="description">Winter season filtering Nov-Mar (60 days)</div>
+    </li>
+    <li>
+      <a href="singlePhase.html">Single Phase Installation</a>
+      <div class="description">Single phase home configuration (7 days)</div>
+    </li>
+    <li>
+      <a href="minimumLimit.html">Minimum Limit Enforcement</a>
+      <div class="description">Very low consumption, minimum limit test (7 days)</div>
+    </li>
+    <li>
+      <a href="jonkoping.html">Jönköping Energi Style</a>
+      <div class="description">2 peaks, all year configuration (14 days)</div>
+    </li>
+    <li>
+      <a href="stressTest.html">Stress Test</a>
+      <div class="description">High variability consumption (30 days)</div>
+    </li>
+    <li>
+      <a href="batteryCharging.html">Battery Charging</a>
+      <div class="description">Smart battery charging during off-peak hours (7 days)</div>
+    </li>
+    <li>
+      <a href="batteryBalancing.html">Battery Balancing</a>
+      <div class="description">Periodic battery balancing feature (1 day)</div>
+    </li>
+    <li>
+      <a href="dynamicHeadroom.html">Dynamic Headroom</a>
+      <div class="description">Dynamic headroom based on battery SOC (1 day)</div>
+    </li>
+    <li>
+      <a href="downtimeDetection.html">Downtime Detection</a>
+      <div class="description">System downtime detection with data gaps (3 days)</div>
+    </li>
+  </ul>
 
-  <div class="category">
-    <h2>🇸🇪 Swedish Provider Configurations</h2>
-    <ul class="scenario-list">
-      <li>
-        <a href="nightDiscount.html">Night Discount (Kungälv Energi)</a>
-        <span class="duration">7 days</span>
-        <div class="description">Tests night discount (nattsänkning) 50% feature</div>
-      </li>
-      <li>
-        <a href="weekdaysOnly.html">Weekdays Only (Ellevio)</a>
-        <span class="duration">14 days</span>
-        <div class="description">Weekday-only limit enforcement</div>
-      </li>
-      <li>
-        <a href="winterSeason.html">Winter Season</a>
-        <span class="duration">60 days</span>
-        <div class="description">Winter season filtering (November-March)</div>
-      </li>
-      <li>
-        <a href="jonkoping.html">Jönköping Energi Style</a>
-        <span class="duration">14 days</span>
-        <div class="description">2 peaks, all year configuration</div>
-      </li>
-    </ul>
-  </div>
-
-  <div class="category">
-    <h2>🔧 Installation Types</h2>
-    <ul class="scenario-list">
-      <li>
-        <a href="singlePhase.html">Single Phase Installation</a>
-        <span class="duration">7 days</span>
-        <div class="description">Single phase home configuration</div>
-      </li>
-      <li>
-        <a href="minimumLimit.html">Minimum Limit Enforcement</a>
-        <span class="duration">7 days</span>
-        <div class="description">Very low consumption, minimum limit test</div>
-      </li>
-    </ul>
-  </div>
-
-  <div class="category">
-    <h2>🔋 Battery Features</h2>
-    <ul class="scenario-list">
-      <li>
-        <a href="batteryCharging.html">Battery Charging</a>
-        <span class="duration">7 days</span>
-        <div class="description">Smart battery charging during off-peak hours</div>
-      </li>
-      <li>
-        <a href="batteryBalancing.html">Battery Balancing</a>
-        <span class="duration">1 day</span>
-        <div class="description">Periodic battery balancing feature for cell health</div>
-      </li>
-      <li>
-        <a href="dynamicHeadroom.html">Dynamic Headroom</a>
-        <span class="duration">1 day</span>
-        <div class="description">Dynamic headroom based on battery SOC</div>
-      </li>
-    </ul>
-  </div>
-
-  <div class="category">
-    <h2>🛡️ Resilience Features</h2>
-    <ul class="scenario-list">
-      <li>
-        <a href="downtimeDetection.html">Downtime Detection</a>
-        <span class="duration">3 days</span>
-        <div class="description">System downtime detection with data gaps</div>
-      </li>
-    </ul>
-  </div>
-
-  <p class="meta">
-    Generated automatically from <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">node-red-contrib-effekttariff</a>.
-    Reports are updated when code changes are pushed to the main branch.
+  <p class="meta">Generated automatically by GitHub Actions.
+    <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">View source on GitHub</a>
   </p>
 </body>
 </html>
