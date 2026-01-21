@@ -1,0 +1,286 @@
+[
+    {
+        "id": "effekttariff-example-flow",
+        "type": "tab",
+        "label": "Effekttariff Peak Shaving",
+        "disabled": false,
+        "info": "# Effekttariff Peak Shaving with Victron ESS\n\nThis flow demonstrates how to use the effekttariff node with a Victron system for Swedish power tariff optimization.\n\n## How it works\n\n1. **Grid Power**: Read from Victron grid meter\n2. **Battery SOC**: Stored in global context for the effekttariff node\n3. **Peak Tracking**: The effekttariff node tracks hourly peaks and calculates limits\n4. **ESS Control**: Output current limit is sent to the Victron ESS\n\n## Requirements\n\n- node-red-contrib-victron\n- node-red-contrib-effekttariff\n- Victron system with ESS Assistant configured"
+    },
+    {
+        "id": "victron-grid-meter",
+        "type": "victron-input-gridmeter",
+        "z": "effekttariff-example-flow",
+        "service": "com.victronenergy.grid/30",
+        "path": "/Ac/Power",
+        "serviceObj": {
+            "service": "com.victronenergy.grid/30",
+            "name": "Grid meter"
+        },
+        "pathObj": {
+            "path": "/Ac/Power",
+            "name": "AC Power (W)",
+            "type": "float"
+        },
+        "name": "Grid Power",
+        "onlyChanges": false,
+        "roundValues": "0",
+        "x": 130,
+        "y": 160,
+        "wires": [
+            [
+                "effekttariff-node"
+            ]
+        ]
+    },
+    {
+        "id": "victron-battery-soc",
+        "type": "victron-input-battery",
+        "z": "effekttariff-example-flow",
+        "service": "com.victronenergy.battery/512",
+        "path": "/Soc",
+        "serviceObj": {
+            "service": "com.victronenergy.battery/512",
+            "name": "Battery"
+        },
+        "pathObj": {
+            "path": "/Soc",
+            "name": "State of Charge (%)",
+            "type": "float"
+        },
+        "name": "Battery SOC",
+        "onlyChanges": false,
+        "roundValues": "0",
+        "x": 130,
+        "y": 240,
+        "wires": [
+            [
+                "store-soc"
+            ]
+        ]
+    },
+    {
+        "id": "victron-min-soc",
+        "type": "victron-input-vebus",
+        "z": "effekttariff-example-flow",
+        "service": "com.victronenergy.vebus/276",
+        "path": "/Hub4/L1/AcPowerSetpoint",
+        "serviceObj": {
+            "service": "com.victronenergy.vebus/276",
+            "name": "MultiPlus-II"
+        },
+        "pathObj": {
+            "path": "/Settings/CGwacs/BatteryLife/MinimumSocLimit",
+            "name": "Minimum SOC Limit (%)",
+            "type": "float"
+        },
+        "name": "Min SOC Setting",
+        "onlyChanges": true,
+        "roundValues": "0",
+        "x": 140,
+        "y": 320,
+        "wires": [
+            [
+                "store-min-soc"
+            ]
+        ]
+    },
+    {
+        "id": "store-soc",
+        "type": "change",
+        "z": "effekttariff-example-flow",
+        "name": "Store SOC",
+        "rules": [
+            {
+                "t": "set",
+                "p": "battery.soc",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "store-min-soc",
+        "type": "change",
+        "z": "effekttariff-example-flow",
+        "name": "Store Min SOC",
+        "rules": [
+            {
+                "t": "set",
+                "p": "battery.minSoc",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 340,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "effekttariff-node",
+        "type": "effekttariff",
+        "z": "effekttariff-example-flow",
+        "name": "Peak Shaving",
+        "peakCount": "3",
+        "onePeakPerDay": true,
+        "peakHoursStart": "7",
+        "peakHoursEnd": "21",
+        "weekdaysOnly": false,
+        "nightDiscount": false,
+        "peakSeasonOnly": true,
+        "peakSeasonStart": "11",
+        "peakSeasonEnd": "3",
+        "minimumLimit": "4",
+        "headroom": "0.3",
+        "phases": "3",
+        "gridVoltage": "230",
+        "maxBreakerCurrent": "25",
+        "batteryEnabled": true,
+        "socContextKey": "battery.soc",
+        "minSocContextKey": "battery.minSoc",
+        "batteryCapacity": "10",
+        "maxChargeRate": "3000",
+        "socBuffer": "20",
+        "forecastSource": "none",
+        "forecastContextKey": "forecast",
+        "morningPeakStart": "6",
+        "morningPeakEnd": "9",
+        "morningPeakWeight": "0.3",
+        "eveningPeakStart": "17",
+        "eveningPeakEnd": "21",
+        "eveningPeakWeight": "1",
+        "budgetBuffer": "20",
+        "batteryBalancingEnabled": false,
+        "batteryBalancingSocThreshold": "95",
+        "batteryBalancingTargetSoc": "100",
+        "batteryBalancingHoldHours": "2",
+        "batteryBalancingStartTime": "0",
+        "batteryBalancingEndTime": "6",
+        "dynamicHeadroomEnabled": false,
+        "dynamicHeadroomRules": "[{\"soc\": 20, \"headroom\": 1.0},{\"soc\": 80, \"headroom\": 0.5},{\"soc\": 101, \"headroom\": 0.2}]",
+        "downtimeDetectionEnabled": true,
+        "downtimeDetectionTriggerHours": "2",
+        "downtimeDetectionAction": "log",
+        "debugMode": false,
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "set-ess-limit"
+            ],
+            [
+                "debug-status"
+            ],
+            [
+                "set-charge-rate"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "set-ess-limit",
+        "type": "victron-output-vebus",
+        "z": "effekttariff-example-flow",
+        "service": "com.victronenergy.vebus/276",
+        "path": "/Ac/ActiveIn/CurrentLimit",
+        "serviceObj": {
+            "service": "com.victronenergy.vebus/276",
+            "name": "MultiPlus-II"
+        },
+        "pathObj": {
+            "path": "/Ac/ActiveIn/CurrentLimit",
+            "name": "AC Input Current Limit (A)",
+            "type": "float"
+        },
+        "name": "Set Current Limit",
+        "x": 590,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "set-charge-rate",
+        "type": "victron-output-vebus",
+        "z": "effekttariff-example-flow",
+        "service": "com.victronenergy.vebus/276",
+        "path": "/Hub4/L1/AcPowerSetpoint",
+        "serviceObj": {
+            "service": "com.victronenergy.vebus/276",
+            "name": "MultiPlus-II"
+        },
+        "pathObj": {
+            "path": "/Hub4/L1/AcPowerSetpoint",
+            "name": "AC Power Setpoint (W)",
+            "type": "float"
+        },
+        "name": "Set Charge Rate",
+        "x": 590,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "debug-status",
+        "type": "debug",
+        "z": "effekttariff-example-flow",
+        "name": "Status",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 550,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "comment-inputs",
+        "type": "comment",
+        "z": "effekttariff-example-flow",
+        "name": "📥 Victron Inputs",
+        "info": "Read grid power and battery status from Victron system.\n\nUpdate the service IDs to match your installation:\n- Grid meter: com.victronenergy.grid/XX\n- Battery: com.victronenergy.battery/XXX\n- VE.Bus: com.victronenergy.vebus/XXX",
+        "x": 140,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "comment-outputs",
+        "type": "comment",
+        "z": "effekttariff-example-flow",
+        "name": "📤 Victron Outputs",
+        "info": "Control the ESS system:\n\n- **Current Limit**: Sets the AC input current limit to prevent exceeding peak targets\n- **Charge Rate**: Controls battery charging during off-peak hours\n\nNote: The exact paths may vary depending on your Victron setup (single/three phase, ESS mode, etc.)",
+        "x": 580,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "comment-context",
+        "type": "comment",
+        "z": "effekttariff-example-flow",
+        "name": "💾 Global Context",
+        "info": "Battery SOC and Min SOC are stored in global context:\n\n- `global.battery.soc` - Current state of charge\n- `global.battery.minSoc` - Minimum SOC setting from ESS\n\nThe effekttariff node reads these values automatically.",
+        "x": 340,
+        "y": 280,
+        "wires": []
+    }
+]

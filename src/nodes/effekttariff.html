@@ -51,17 +51,20 @@
       // Downtime detection settings
       downtimeDetectionEnabled: { value: true },
       downtimeDetectionTriggerHours: { value: 2, validate: RED.validators.number() },
-      downtimeDetectionAction: { value: 'log' }
+      downtimeDetectionAction: { value: 'log' },
+
+      // Debug settings
+      debugMode: { value: false }
     },
     inputs: 1,
-    outputs: 4,
+    outputs: 5,
     icon: 'font-awesome/fa-bolt',
     label: function () {
       return this.name || 'Effekttariff'
     },
     paletteLabel: 'Effekttariff',
     inputLabels: ['Grid Power (W)'],
-    outputLabels: ['Current Limit (A)', 'Status', 'Charge Rate (W)', 'Chart Data'],
+    outputLabels: ['Current Limit (A)', 'Status', 'Charge Rate (W)', 'Chart Data', 'Debug'],
     oneditprepare: function () {
       // Season month dropdowns
       const months = [
@@ -430,6 +433,18 @@
 
       </div>
 
+      <hr>
+      <h4 data-i18n="effekttariff.section.debug">Debug</h4>
+
+      <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-debugMode" style="width:auto; margin-right:5px">
+        <label for="node-input-debugMode" style="width:auto" data-i18n="effekttariff.label.debugMode">Enable debug mode</label>
+      </div>
+      <div class="form-row">
+        <span style="margin-left: 105px; color: #666; font-size: 11px">Outputs detailed debug messages on output 5 for troubleshooting</span>
+      </div>
+
     </script>
 
     
@@ -473,6 +488,14 @@
       <dl class="message-properties">
         <dt>payload <span class="property-type">array</span></dt>
         <dd>Array of chart-ready messages for ui-chart node. Each message has topic (series name) and payload with x (timestamp) and y (value). Series: consumption, limit, target, peak_avg, battery_soc.</dd>
+      </dl>
+    </li>
+    <li>Debug (when debug mode enabled)
+      <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Detailed debug information including events, state changes, and calculations. Useful for troubleshooting in field deployments.</dd>
+        <dt>payload.events <span class="property-type">array</span></dt>
+        <dd>Array of debug events with type, timestamp, and details</dd>
       </dl>
     </li>
   </ol>

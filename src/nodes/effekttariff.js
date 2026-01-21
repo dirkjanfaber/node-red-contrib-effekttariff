@@ -46,7 +46,9 @@ module.exports = function (RED) {
         enabled: config.downtimeDetectionEnabled !== false,
         triggerHours: parseInt(config.downtimeDetectionTriggerHours) || 2,
         action: config.downtimeDetectionAction || 'log'
-      }
+      },
+      // Debug settings
+      debugMode: config.debugMode || false
     })
 
     // Track last charge rate for change detection
@@ -66,9 +68,27 @@ module.exports = function (RED) {
       send = send || function () { node.send.apply(node, arguments) }
       done = done || function (err) { if (err) node.error(err, msg) }
 
+      // Debug event collector
+      const debugEvents = []
+      function debugLog (type, details) {
+        if (trackerConfig.debugMode) {
+          debugEvents.push({
+            type,
+            timestamp: new Date().toISOString(),
+            ...details
+          })
+        }
+      }
+
       try {
         const gridPowerW = parseFloat(msg.payload) || 0
         const now = new Date()
+
+        // Debug: Input received
+        debugLog('input', {
+          gridPowerW,
+          timestamp: now.toISOString()
+        })
 
         // Read battery state from global context if enabled
         let batteryState = null
@@ -83,10 +103,33 @@ module.exports = function (RED) {
               minSoc: typeof minSoc === 'number' ? minSoc : 20
             }
           }
+
+          // Debug: Battery state
+          debugLog('battery_state', {
+            available: batteryState !== null,
+            soc: batteryState?.soc,
+            minSoc: batteryState?.minSoc,
+            socContextKey: trackerConfig.socContextKey
+          })
         }
 
         // Process the measurement
         const result = peakTracker.processGridPower(state, trackerConfig, gridPowerW, now, batteryState)
+
+        // Debug: Processing result
+        debugLog('process_result', {
+          inPeakSeason: result.inPeakSeason,
+          inPeakHours: result.inPeakHours,
+          isLearning: result.isLearning,
+          currentHour: result.currentHour,
+          currentHourAvgW: Math.round(result.currentHourAvgW),
+          targetLimitW: result.targetLimitW,
+          outputLimitA: result.outputLimitA,
+          limitReason: result.limitReason,
+          peakAvgW: Math.round(result.peakAvgW),
+          peaksRecorded: result.topPeaks.length,
+          outputChanged: result.outputChanged
+        })
 
         // Battery status variables
         let batteryStatus = null
@@ -95,6 +138,17 @@ module.exports = function (RED) {
 
         if (trackerConfig.batteryEnabled) {
           batteryStatus = peakTracker.getBatteryStatus(state, trackerConfig, batteryState, now)
+
+          // Debug: Battery status
+          debugLog('battery_status', {
+            charging: batteryStatus?.charging,
+            chargeRateW: batteryStatus?.chargeRateW,
+            reason: batteryStatus?.reason,
+            targetSoc: batteryStatus?.targetSoc,
+            currentSoc: batteryStatus?.currentSoc,
+            hoursUntilPeak: batteryStatus?.hoursUntilPeak,
+            balancingActive: batteryStatus?.balancingActive
+          })
 
           // Handle forecasting for budget-based discharge
           if (trackerConfig.forecastSource !== 'none') {
@@ -156,11 +210,20 @@ module.exports = function (RED) {
         // Log month reset
         if (result.monthReset) {
           node.warn(`Effekttariff: New month (${peakTracker.MONTH_NAMES[now.getMonth()]}) - reset ${result.previousPeakCount} peaks`)
+          debugLog('month_reset', {
+            newMonth: peakTracker.MONTH_NAMES[now.getMonth()],
+            previousPeakCount: result.previousPeakCount
+          })
         }
 
         // Log downtime
         if (result.downtime) {
           node.warn(`Effekttariff: Downtime detected! Missed ${result.downtime.missedHours} hours of data between ${result.downtime.fromHour}:00 and ${result.downtime.toHour}:00.`)
+          debugLog('downtime_detected', {
+            fromHour: result.downtime.fromHour,
+            toHour: result.downtime.toHour,
+            missedHours: result.downtime.missedHours
+          })
         }
 
         // Log hour completion
@@ -168,6 +231,13 @@ module.exports = function (RED) {
           const h = result.hourCompleted
           const nightNote = h.wasNight && trackerConfig.nightDiscount ? ' (night 50%)' : ''
           node.warn(`Effekttariff: Hour ${h.hour}:00 completed - ${(h.avgW / 1000).toFixed(2)} kW${nightNote} [${h.result}]`)
+          debugLog('hour_completed', {
+            hour: h.hour,
+            avgW: Math.round(h.avgW),
+            effectiveW: Math.round(h.effectiveW),
+            wasNight: h.wasNight,
+            result: h.result
+          })
 
           // Update historical data for forecasting learning
           if (trackerConfig.forecastSource === 'historical' || trackerConfig.forecastSource !== 'none') {
@@ -326,7 +396,31 @@ module.exports = function (RED) {
           node.context().flow.set(storageKey, state, 'file')
         }
 
-        send([limitMsg, statusMsg, chargeMsg, chartMessages])
+        // Output 5: Debug messages (only when debug mode enabled and there are events)
+        let debugMsg = null
+        if (trackerConfig.debugMode && debugEvents.length > 0) {
+          debugMsg = {
+            payload: {
+              timestamp: now.toISOString(),
+              events: debugEvents,
+              state: {
+                currentMonth: state.currentMonth,
+                currentHour: state.currentHour,
+                peakCount: state.peaks.length,
+                topPeaks: result.topPeaks.map(p => ({
+                  date: p.date,
+                  hour: p.hour,
+                  valueKw: Math.round(p.value) / 1000,
+                  effectiveKw: Math.round(p.effective) / 1000
+                })),
+                isBalancing: state.isBalancing || false
+              }
+            },
+            topic: 'effekttariff_debug'
+          }
+        }
+
+        send([limitMsg, statusMsg, chargeMsg, chartMessages, debugMsg])
         done()
       } catch (err) {
         done(err)
