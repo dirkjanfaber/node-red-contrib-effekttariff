@@ -1,26 +1,42 @@
 # node-red-contrib-effekttariff
 
-Node-RED node for Swedish "effekttariff" (power tariff) peak shaving.
+Node-RED node for capacity tariff peak shaving. Supports both Swedish "effekttariff" and Belgian "capaciteitstarief".
 
-## Understanding Your Electricity Bill in Sweden
+## Supported Regions
+
+This node supports two capacity tariff models:
+
+- **Sweden (Effekttariff)**: Hourly measurement, 2-3 highest peaks per month, seasonal (Nov-Mar)
+- **Belgium (Capaciteitstarief)**: 15-minute measurement, single highest peak per month, 12-month rolling average
+
+## Understanding Capacity Tariffs
+
+### Sweden (Effekttariff)
 
 In Sweden, your total electricity cost is typically composed of two main parts:
 
 1.  **Energy Cost (Spot Price)**: The price for the actual electricity (kWh) you consume. With a dynamic contract ("rörligt elpris med timprisavtal"), this price changes every hour based on the Nord Pool spot market.
 2.  **Grid Fee (Nätavgift)**: What you pay to your local grid company (`nätbolag`) for grid maintenance and usage.
 
-This node focuses on minimizing a component of the **Grid Fee** called the **power tariff (`effektavgift`)**.
+The Swedish power tariff (effektavgift) is based on the **average** of your 2-3 highest hourly consumption values during a month. These peaks are often only measured on different weekdays during specific "peak hours" (e.g., 07:00-21:00) and during winter months (November-March).
 
-## How the Power Tariff (Effekttariff) Works
+### Belgium (Capaciteitstarief)
 
-The goal of the power tariff is to encourage users to spread out their consumption and reduce load on the grid. It does this by adding a fee based on your highest consumption peaks. However, the exact calculation method varies between grid companies.
+Starting January 2023, Belgian households have a capacity tariff based on:
 
-The two most common models are:
+- **15-minute measurement intervals** (quarter-hourly peaks)
+- **Single highest peak per month** determines monthly capacity
+- **12-month rolling average** for annual billing
+- **24/7 measurement** (no peak hours, no seasonal restrictions)
+- **Cost: ~€50/kW/year** based on the rolling average
 
-1.  **Average of N Peaks (e.g., Göteborg Energi, Mölndal Energi)**: The fee is based on the **average** of your 2-3 highest hourly consumption values during a month. These peaks are often only measured on different weekdays during specific "peak hours". **This is the model currently implemented by this node.**
-2.  **Single Highest Peak**: The fee is based on the **single highest hourly average** consumption during the month.
+A single high-power event (like EV charging at 11kW) can significantly impact your annual capacity fee, making peak shaving especially valuable for Belgian households.
 
-**Important:** You must configure this node according to your specific grid company's rules, especially the **peak hours** and the number of **peaks to average**.
+## How the Power Tariff Works
+
+The goal of the power tariff is to encourage users to spread out their consumption and reduce load on the grid. It does this by adding a fee based on your highest consumption peaks.
+
+**Important:** You must configure this node according to your specific grid company's rules, or use the region presets for quick setup.
 
 > **Disclaimer:** The peak reduction estimates provided by this node and its tools are theoretical. Actual savings depend on many factors including your consumption patterns, equipment response times, battery efficiency, and grid conditions. Results may vary from simulated values.
 
@@ -51,7 +67,26 @@ Connect a Grid Meter node (Power in Watts) to the input. The node expects positi
 
 ## Configuration
 
-### Peak Measurement
+### Region Preset
+
+Use the region preset dropdown for quick configuration:
+
+| Region | Description |
+|--------|-------------|
+| **Custom** | Manual configuration of all settings |
+| **Sweden** | 60-min intervals, 3 peaks/month, one per day, peak hours 07-21, season Nov-Mar |
+| **Belgium** | 15-min intervals, single peak/month, 24/7 measurement, 12-month rolling average |
+
+### Measurement Settings (Belgium/Advanced)
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Measurement interval | 15, 30, or 60 minutes | 60 min |
+| Single peak per month | Only track highest peak per month (Belgium-style) | No |
+| Annual billing | Enable 12-month rolling average (Belgium-style) | No |
+| Rolling months | Number of months to average for annual billing | 12 |
+
+### Peak Measurement (Sweden)
 
 | Setting | Description | Default |
 |---------|-------------|---------|
@@ -122,13 +157,27 @@ At the start of each month (or first use), the node enters a learning phase unti
 
 Example at 230V: 4 kW = 17.4A (1-phase) or 5.8A (3-phase)
 
-## Swedish Provider Examples
+## Provider Examples
+
+### Sweden
 
 | Provider | Peaks | Hours | Season | Night | Weekdays |
 |----------|-------|-------|--------|-------|----------|
 | Ellevio | 3 | 07-19 | Nov-Mar | No | Yes |
 | Kungälv Energi | 3 | 07-21 | Nov-Mar | Yes | Yes |
 | Jönköping Energi | 2 | 07-21 | All year | No | No |
+
+### Belgium
+
+| Setting | Value |
+|---------|-------|
+| Measurement interval | 15 minutes |
+| Peak tracking | Single highest per month |
+| Billing period | 12-month rolling average |
+| Peak hours | 24/7 (no restrictions) |
+| Season | All year |
+
+> **Quick Setup:** Select "Belgium" from the Region dropdown to auto-configure all settings.
 
 ## Future Development
 
@@ -221,6 +270,9 @@ Interactive HTML reports are automatically generated and available online. **[Vi
 | `batteryBalancing` | Periodic battery balancing feature | 1 day | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/batteryBalancing.html) |
 | `dynamicHeadroom` | Dynamic headroom based on battery SOC | 1 day | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/dynamicHeadroom.html) |
 | `downtimeDetection` | System downtime detection with data gaps | 3 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/downtimeDetection.html) |
+| `belgiumBasic` | Belgian capacity tariff with 15-min intervals | 30 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumBasic.html) |
+| `belgiumWithEV` | Belgian household with 11kW EV charging | 30 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumWithEV.html) |
+| `belgiumAnnualRolling` | Full year showing 12-month rolling average | 395 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumAnnualRolling.html) |
 
 ### Running Tests
 

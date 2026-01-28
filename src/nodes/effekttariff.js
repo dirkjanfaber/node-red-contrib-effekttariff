@@ -10,6 +10,15 @@ module.exports = function (RED) {
 
     // Build configuration from node settings
     const trackerConfig = peakTracker.mergeConfig({
+      // Region preset (sweden, belgium, or custom)
+      region: config.region || 'custom',
+      // Measurement interval (15, 30, or 60 minutes)
+      measurementIntervalMinutes: parseInt(config.measurementInterval) || 60,
+      // Single peak mode (Belgium-style: only track highest peak per month)
+      singlePeakMode: config.singlePeakMode || false,
+      // Annual billing (Belgium-style: 12-month rolling average)
+      annualBillingEnabled: config.annualBillingEnabled || false,
+      rollingMonths: parseInt(config.rollingMonths) || 12,
       // Peak tracking settings
       peakCount: parseInt(config.peakCount) || 3,
       onePeakPerDay: config.onePeakPerDay !== false,
@@ -60,8 +69,9 @@ module.exports = function (RED) {
     // Storage key for persistent state
     const storageKey = `effekttariff_${node.id}`
 
-    // Load state from persistent storage
-    const state = node.context().flow.get(storageKey, 'file') || peakTracker.createInitialState()
+    // Load state from persistent storage and migrate to current format
+    const loadedState = node.context().flow.get(storageKey, 'file')
+    const state = peakTracker.migrateState(loadedState || peakTracker.createInitialState())
 
     // Track if this is first message since deploy
     let isFirstMessage = true
@@ -231,7 +241,22 @@ module.exports = function (RED) {
           })
         }
 
-        // Log hour completion
+        // Log interval completion (Belgium 15/30 min mode)
+        if (result.intervalCompleted) {
+          const i = result.intervalCompleted
+          const nightNote = i.wasNight && trackerConfig.nightDiscount ? ' (night 50%)' : ''
+          node.warn(`Effekttariff: Interval ${i.intervalId} completed - ${(i.avgW / 1000).toFixed(2)} kW${nightNote} [${i.result}]`)
+          debugLog('interval_completed', {
+            intervalId: i.intervalId,
+            hour: i.hour,
+            avgW: Math.round(i.avgW),
+            effectiveW: Math.round(i.effectiveW),
+            wasNight: i.wasNight,
+            result: i.result
+          })
+        }
+
+        // Log hour completion (Sweden 60 min mode)
         if (result.hourCompleted) {
           const h = result.hourCompleted
           const nightNote = h.wasNight && trackerConfig.nightDiscount ? ' (night 50%)' : ''
@@ -277,6 +302,7 @@ module.exports = function (RED) {
         // Output 2: Status object
         const statusPayload = {
           timestamp: now.toISOString(),
+          region: trackerConfig.region,
           inPeakSeason: result.inPeakSeason,
           inPeakHours: result.inPeakHours,
           isLearning: result.isLearning,
@@ -290,14 +316,34 @@ module.exports = function (RED) {
           limitReason: result.limitReason,
           peakAvgW: Math.round(result.peakAvgW),
           peakAvgKw: result.peakAvgW / 1000,
-          peaksRecorded: result.topPeaks.length,
-          peaksNeeded: trackerConfig.peakCount,
+          peaksRecorded: trackerConfig.singlePeakMode ? (result.currentMonthPeak ? 1 : 0) : result.topPeaks.length,
+          peaksNeeded: trackerConfig.singlePeakMode ? 1 : trackerConfig.peakCount,
           topPeaks: result.topPeaks.map(p => ({
             date: p.date,
             hour: p.hour,
             valueKw: Math.round(p.value) / 1000,
             effectiveKw: Math.round(p.effective) / 1000
           }))
+        }
+
+        // Add Belgium-specific fields
+        if (trackerConfig.singlePeakMode && result.currentMonthPeak) {
+          statusPayload.currentMonthPeak = {
+            date: result.currentMonthPeak.date,
+            time: result.currentMonthPeak.time,
+            valueKw: result.currentMonthPeak.value / 1000,
+            effectiveKw: result.currentMonthPeak.effective / 1000
+          }
+        }
+
+        if (trackerConfig.annualBillingEnabled) {
+          statusPayload.annualBilling = {
+            enabled: true,
+            rollingMonths: trackerConfig.rollingMonths,
+            monthsRecorded: result.monthlyPeaksCount || 0,
+            rollingAverageW: result.rollingAverageW || 0,
+            rollingAverageKw: (result.rollingAverageW || 0) / 1000
+          }
         }
 
         // Add battery status to status payload if enabled
@@ -460,16 +506,25 @@ module.exports = function (RED) {
       }
     }
 
+    // Region prefix for Belgium
+    const regionPrefix = config.region === 'belgium' ? 'BE: ' : ''
+
+    // Single peak mode (Belgium) vs multi-peak mode (Sweden)
+    const peakCount = config.singlePeakMode
+      ? (result.currentMonthPeak ? 1 : 0)
+      : result.topPeaks.length
+    const peaksNeeded = config.singlePeakMode ? 1 : config.peakCount
+
     if (!result.inPeakSeason) {
-      return `Off-season | Avg: ${avgKw} kW | ${result.topPeaks.length} peaks${batterySuffix}`
+      return `${regionPrefix}Off-season | Avg: ${avgKw} kW | ${peakCount} peaks${batterySuffix}`
     }
 
     if (!result.inPeakHours) {
-      return `Off-peak (until ${config.peakHoursStart}:00) | Grid: ${currentKw} kW${batterySuffix}`
+      return `${regionPrefix}Off-peak (until ${config.peakHoursStart}:00) | Grid: ${currentKw} kW${batterySuffix}`
     }
 
     if (result.isLearning) {
-      return `Learning (${result.topPeaks.length}/${config.peakCount}) | Grid: ${currentKw} kW | Limit: ${result.outputLimitA}A${batterySuffix}`
+      return `${regionPrefix}Learning (${peakCount}/${peaksNeeded}) | Grid: ${currentKw} kW | Limit: ${result.outputLimitA}A${batterySuffix}`
     }
 
     const pct = result.targetLimitW > 0
@@ -477,14 +532,14 @@ module.exports = function (RED) {
       : 0
 
     if (result.currentHourAvgW > result.targetLimitW * 1.05) {
-      return `⚠ OVER ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A${batterySuffix}`
+      return `${regionPrefix}⚠ OVER ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A${batterySuffix}`
     }
 
     if (result.currentHourAvgW > result.targetLimitW * 0.85) {
-      return `Peak: ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A${batterySuffix}`
+      return `${regionPrefix}Peak: ${currentKw}/${targetKw} kW (${pct}%) | Limit: ${result.outputLimitA}A${batterySuffix}`
     }
 
-    return `Peak: ${currentKw}/${targetKw} kW | Limit: ${result.outputLimitA}A | Avg: ${avgKw} kW${batterySuffix}`
+    return `${regionPrefix}Peak: ${currentKw}/${targetKw} kW | Limit: ${result.outputLimitA}A | Avg: ${avgKw} kW${batterySuffix}`
   }
 
   /**

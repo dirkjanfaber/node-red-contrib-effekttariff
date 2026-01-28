@@ -120,13 +120,14 @@
 <body>
   <h1>🔌 Effekttariff Simulation Reports</h1>
   <p class="intro">
-    Interactive simulation reports for the Swedish effekttariff peak shaving system.
+    Interactive simulation reports for capacity tariff peak shaving systems.
+    Supports both Swedish effekttariff and Belgian capaciteitstarief.
     Each report includes analysis showing baseline vs achieved peaks, charts, and battery behavior.
   </p>
 
   <div class="summary-box">
     <div class="summary-item">
-      <div class="summary-value">15</div>
+      <div class="summary-value">18</div>
       <div class="summary-label">Scenarios</div>
     </div>
     <div class="summary-item">
@@ -256,9 +257,50 @@
         </div>
         <div class="scenario-meta">
           <span class="badge badge-tracking">5 kW tracked</span>
-          
+
         </div>
         <div class="description">Configuration matching Jönköping Energi (2 peaks, all year)</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🇧🇪 Belgian Capacity Tariff</h2>
+    <ul class="scenario-list">
+
+      <li>
+        <div class="scenario-header">
+          <a href="belgiumBasic.html">Belgium Basic</a>
+          <span class="duration">30 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">15-min intervals</span>
+
+        </div>
+        <div class="description">Belgian capacity tariff with 15-minute intervals and single peak per month</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="belgiumWithEV.html">Belgium EV Charging</a>
+          <span class="duration">30 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-neutral">11 kW EV impact</span>
+
+        </div>
+        <div class="description">Belgian household with occasional 11kW EV charging showing peak impact</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="belgiumAnnualRolling.html">Belgium Annual Rolling</a>
+          <span class="duration">395 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">12-month rolling avg</span>
+
+        </div>
+        <div class="description">Full year simulation showing 12-month rolling average for Belgian billing</div>
       </li>
     </ul>
   </div>
