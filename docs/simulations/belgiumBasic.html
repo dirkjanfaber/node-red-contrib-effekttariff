@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capaciteitstarief Simulation Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { color: #333; margin-bottom: 5px; }
+    .subtitle { color: #666; margin-bottom: 20px; }
+    .meta {
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .meta-item { }
+    .meta-label { font-size: 12px; color: #888; text-transform: uppercase; }
+    .meta-value { font-size: 18px; font-weight: 600; color: #333; }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+      gap: 20px;
+    }
+    .chart-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .chart-title { margin: 0 0 15px 0; color: #333; font-size: 16px; }
+    canvas { max-height: 300px; }
+    .summary {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .summary h3 { margin-top: 0; }
+    .peaks-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .peaks-table th, .peaks-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .peaks-table th { background: #f9f9f9; font-weight: 600; }
+    .verification {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .verification.passed { background: #d4edda; }
+    .verification.failed { background: #f8d7da; }
+    .analysis {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .analysis h2 { margin: 0 0 20px 0; font-size: 20px; }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: center;
+    }
+    .analysis-item { }
+    .analysis-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; margin-bottom: 5px; }
+    .analysis-value { font-size: 28px; font-weight: 700; }
+    .analysis-subtext { font-size: 12px; opacity: 0.8; margin-top: 3px; }
+    .reduction { color: #4ade80; }
+    .analysis-explanation {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .analysis-explanation strong { color: #fbbf24; }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 12px 15px;
+      text-align: left;
+    }
+    .comparison-table th {
+      background: rgba(255,255,255,0.15);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .comparison-table td { border-top: 1px solid rgba(255,255,255,0.1); }
+    @media (max-width: 768px) {
+      .analysis-grid { grid-template-columns: 1fr; }
+    }
+    .report-footer {
+      margin-top: 30px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
+      color: #666;
+      font-size: 0.9em;
+    }
+    .report-footer a { color: #0066cc; text-decoration: none; }
+    .report-footer a:hover { text-decoration: underline; }
+    .footer-links { margin-top: 10px; }
+    .footer-links a { margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Capaciteitstarief Simulation Report</h1>
+    <p class="subtitle">Belgium Basic - Belgian capacity tariff with 15-minute intervals and single peak per month</p>
+
+    <div class="meta">
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">Period</div>
+          <div class="meta-value">2023-12-31 to 2024-01-30</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Duration</div>
+          <div class="meta-value">30 days</div>
+        </div>
+        
+        <div class="meta-item">
+          <div class="meta-label">Measurement</div>
+          <div class="meta-value">15-min intervals</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Peak Tracking</div>
+          <div class="meta-value">Single peak/month</div>
+        </div>
+        
+        <div class="meta-item">
+          <div class="meta-label">Average Power</div>
+          <div class="meta-value">1.77 kW</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Month Peak</div>
+          <div class="meta-value">4 kW</div>
+        </div>
+      </div>
+    </div>
+    
+
+    <div class="analysis">
+      <h2>Analysis: What Does This Simulation Prove?</h2>
+      <div class="analysis-explanation"><strong>What this proves:</strong> Belgium's capacity tariff (capaciteitstarief) uses a different model than Sweden.
+      Instead of averaging multiple peaks, Belgium charges based on your single highest 15-minute peak each month. This simulation
+      shows how the system tracks quarter-hourly consumption and identifies the single highest peak. Because only one peak matters,
+      a single high-power event (like EV charging) can dominate your monthly capacity fee. The system measures 24/7, all year -
+      there are no off-peak hours or seasons. This makes peak shaving with a battery even more valuable in Belgium.</div>
+      
+      <div class="analysis-grid">
+        <div class="analysis-item">
+          <div class="analysis-label">Current Month Peak</div>
+          <div class="analysis-value">4 kW</div>
+          <div class="analysis-subtext">Highest 15-min interval</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">Est. Annual Cost*</div>
+          <div class="analysis-value">€200</div>
+          <div class="analysis-subtext">Capacity tariff portion</div>
+        </div>
+        <div class="analysis-item">
+          <div class="analysis-label">Est. Monthly Cost*</div>
+          <div class="analysis-value">€17</div>
+          <div class="analysis-subtext">Per month average</div>
+        </div>
+      </div>
+      <div class="analysis-explanation">
+        <strong>Why No Savings?</strong> This simulation has no battery configured. The capaciteitstarief node outputs a
+        current limit signal, but without a battery to discharge, there's nothing to cover the difference when
+        consumption exceeds the limit. The grid must supply all power, so peaks cannot be reduced.
+        <br/><br/>
+        <strong>What This Shows:</strong> The system correctly tracks your highest 15-minute peak during the month.
+        Your current peak of <strong>4 kW</strong>
+        results in an estimated annual capacity fee of <strong>€200</strong>.
+        <br/><br/>
+        <strong>To Actually Reduce Peaks:</strong> You need a battery that can discharge during high-consumption moments.
+        For example, reducing an 11 kW EV charging peak to 5 kW could save approximately
+        <strong>€300/year</strong> on your capacity tariff.
+      </div>
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Current Month Peak</th>
+            <th>Date/Time</th>
+            <th>Power (kW)</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td>Highest Peak</td>
+            <td>2024-01-01 16:00</td>
+            <td>4.00</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
+      <div style="font-size: 11px; opacity: 0.7; margin-top: 10px;">*Estimated using Belgian capacity tariff rate of ~€50/kW/year. Actual rates vary by provider.</div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-container">
+        <h3 class="chart-title">Interval Power Consumption vs Limit</h3>
+        <canvas id="powerChart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-title">Monthly Peak</h3>
+        <canvas id="peaksChart"></canvas>
+      </div>
+
+      
+    </div>
+
+    <div class="summary">
+      <h3>Top Peaks</h3>
+      <table class="peaks-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Hour</th>
+            <th>Actual (kW)</th>
+            <th>Effective (kW)</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        </tbody>
+      </table>
+    </div>
+
+    
+    <div class="verification passed">
+      <strong>Verification: ✓ PASSED</strong>
+      (2/2 checks)
+    </div>
+    
+  </div>
+
+  <script>
+    // Power consumption chart
+    new Chart(document.getElementById('powerChart'), {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Consumption (W)',
+            data: [],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0
+          },
+          {
+            label: 'Effective (W)',
+            data: [],
+            borderColor: '#10b981',
+            backgroundColor: 'transparent',
+            borderDash: [5, 5],
+            tension: 0.3,
+            pointRadius: 0
+          },
+          {
+            label: 'Limit (W)',
+            data: [],
+            borderColor: '#ef4444',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            stepped: true,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        scales: {
+          x: {
+            type: 'time',
+            time: { unit: 'day' },
+            title: { display: true, text: 'Date' }
+          },
+          y: {
+            title: { display: true, text: 'Power (W)' },
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return ctx.dataset.label + ': ' + (ctx.parsed.y / 1000).toFixed(2) + ' kW';
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Peaks bar chart
+    new Chart(document.getElementById('peaksChart'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Effective Power (W)',
+          data: [],
+          backgroundColor: '#f59e0b',
+          borderColor: '#d97706',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        scales: {
+          x: {
+            title: { display: true, text: 'Power (W)' },
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return (ctx.parsed.x / 1000).toFixed(2) + ' kW';
+              }
+            }
+          }
+        }
+      }
+    });
+
+    
+  </script>
+
+  <div class="report-footer">
+    <div>Generated by <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">node-red-contrib-effekttariff</a></div>
+    <div class="footer-links">
+      <a href="index.html">← All Simulations</a>
+      <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">GitHub Repository</a>
+    </div>
+  </div>
+</body>
+</html>

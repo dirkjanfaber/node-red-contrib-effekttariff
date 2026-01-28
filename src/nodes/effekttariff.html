@@ -4,6 +4,13 @@
     color: '#F7AB3E',
     defaults: {
       name: { value: '' },
+      // Region and measurement settings
+      region: { value: 'custom' },
+      measurementInterval: { value: 60, validate: RED.validators.number() },
+      singlePeakMode: { value: false },
+      annualBillingEnabled: { value: false },
+      rollingMonths: { value: 12, validate: RED.validators.number() },
+      // Peak tracking settings
       peakCount: { value: 3, validate: RED.validators.number() },
       onePeakPerDay: { value: true },
       peakHoursStart: { value: 7, validate: RED.validators.number() },
@@ -177,6 +184,66 @@
 
       $('#node-input-learningMode').on('change', toggleLearningModeFields)
       toggleLearningModeFields()
+
+      // Toggle annual billing fields visibility
+      function toggleAnnualBillingFields () {
+        const show = $('#node-input-annualBillingEnabled').is(':checked')
+        $('.annual-billing-row').toggle(show)
+      }
+
+      $('#node-input-annualBillingEnabled').on('change', toggleAnnualBillingFields)
+      toggleAnnualBillingFields()
+
+      // Toggle single peak mode fields visibility
+      function toggleSinglePeakFields () {
+        const singlePeak = $('#node-input-singlePeakMode').is(':checked')
+        // Hide multi-peak settings when in single peak mode
+        $('.multi-peak-row').toggle(!singlePeak)
+      }
+
+      $('#node-input-singlePeakMode').on('change', toggleSinglePeakFields)
+      toggleSinglePeakFields()
+
+      // Region preset handling
+      function applyRegionPreset (region) {
+        if (region === 'sweden') {
+          $('#node-input-measurementInterval').val(60)
+          $('#node-input-singlePeakMode').prop('checked', false)
+          $('#node-input-annualBillingEnabled').prop('checked', false)
+          $('#node-input-peakCount').val(3)
+          $('#node-input-onePeakPerDay').prop('checked', true)
+          $('#node-input-peakHoursStart').val(7)
+          $('#node-input-peakHoursEnd').val(21)
+          $('#node-input-weekdaysOnly').prop('checked', false)
+          $('#node-input-nightDiscount').prop('checked', false)
+          $('#node-input-peakSeasonOnly').prop('checked', true)
+          $('#node-input-peakSeasonStart').val(11)
+          $('#node-input-peakSeasonEnd').val(3)
+        } else if (region === 'belgium') {
+          $('#node-input-measurementInterval').val(15)
+          $('#node-input-singlePeakMode').prop('checked', true)
+          $('#node-input-annualBillingEnabled').prop('checked', true)
+          $('#node-input-rollingMonths').val(12)
+          $('#node-input-peakCount').val(1)
+          $('#node-input-onePeakPerDay').prop('checked', false)
+          $('#node-input-peakHoursStart').val(0)
+          $('#node-input-peakHoursEnd').val(24)
+          $('#node-input-weekdaysOnly').prop('checked', false)
+          $('#node-input-nightDiscount').prop('checked', false)
+          $('#node-input-peakSeasonOnly').prop('checked', false)
+        }
+        // Update visibility after applying preset
+        toggleSeasonFields()
+        toggleAnnualBillingFields()
+        toggleSinglePeakFields()
+      }
+
+      $('#node-input-region').on('change', function () {
+        const region = $(this).val()
+        if (region !== 'custom') {
+          applyRegionPreset(region)
+        }
+      })
     }
   })
 </script>
@@ -188,14 +255,52 @@
   </div>
 
   <hr>
-  <h4 data-i18n="effekttariff.section.peak">Peak Measurement</h4>
+  <h4 data-i18n="effekttariff.section.region">Region Preset</h4>
 
   <div class="form-row">
-    <label for="node-input-peakCount"><i class="fa fa-list-ol"></i> <span data-i18n="effekttariff.label.peakCount">Peaks to average</span></label>
-    <input type="number" id="node-input-peakCount" min="2" max="5" style="width:60px">
+    <label for="node-input-region"><i class="fa fa-globe"></i> <span data-i18n="effekttariff.label.region">Region</span></label>
+    <select id="node-input-region" style="width:200px">
+      <option value="custom">Custom</option>
+      <option value="sweden">Sweden (Effekttariff)</option>
+      <option value="belgium">Belgium (Capaciteitstarief)</option>
+    </select>
   </div>
 
   <div class="form-row">
+    <label for="node-input-measurementInterval"><i class="fa fa-clock-o"></i> <span data-i18n="effekttariff.label.measurementInterval">Measurement interval</span></label>
+    <select id="node-input-measurementInterval" style="width:140px">
+      <option value="60">60 min (hourly)</option>
+      <option value="30">30 min</option>
+      <option value="15">15 min (quarter)</option>
+    </select>
+  </div>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-singlePeakMode" style="width:auto; margin-right:5px">
+    <label for="node-input-singlePeakMode" style="width:auto" data-i18n="effekttariff.label.singlePeakMode">Single peak per month (Belgium-style)</label>
+  </div>
+
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-annualBillingEnabled" style="width:auto; margin-right:5px">
+    <label for="node-input-annualBillingEnabled" style="width:auto" data-i18n="effekttariff.label.annualBillingEnabled">Annual billing (12-month rolling avg)</label>
+  </div>
+
+  <div class="form-row annual-billing-row">
+    <label for="node-input-rollingMonths"><i class="fa fa-calendar"></i> <span data-i18n="effekttariff.label.rollingMonths">Rolling months</span></label>
+    <input type="number" id="node-input-rollingMonths" min="1" max="24" style="width:60px">
+  </div>
+
+  <hr>
+  <h4 data-i18n="effekttariff.section.peak">Peak Measurement</h4>
+
+  <div class="form-row multi-peak-row">
+    <label for="node-input-peakCount"><i class="fa fa-list-ol"></i> <span data-i18n="effekttariff.label.peakCount">Peaks to average</span></label>
+    <input type="number" id="node-input-peakCount" min="1" max="5" style="width:60px">
+  </div>
+
+  <div class="form-row multi-peak-row">
     <label>&nbsp;</label>
     <input type="checkbox" id="node-input-onePeakPerDay" style="width:auto; margin-right:5px">
     <label for="node-input-onePeakPerDay" style="width:auto" data-i18n="effekttariff.label.onePeakPerDay">One peak per day only</label>
@@ -481,7 +586,13 @@
     
 
     <script type="text/html" data-help-name="effekttariff">
-  <p>Swedish effekttariff (power tariff) peak shaving controller with optional battery charging.</p>
+  <p>Capacity tariff peak shaving controller with optional battery charging. Supports both Swedish effekttariff and Belgian capaciteitstarief.</p>
+
+  <h3>Supported Regions</h3>
+  <ul>
+    <li><b>Sweden (Effekttariff)</b>: Hourly measurement, 3 highest peaks per month, seasonal (Nov-Mar)</li>
+    <li><b>Belgium (Capaciteitstarief)</b>: 15-minute measurement, single highest peak per month, 12-month rolling average for annual billing</li>
+  </ul>
 
   <h3>Input</h3>
   <dl class="message-properties">
@@ -532,12 +643,30 @@
   </ol>
 
   <h3>Details</h3>
+
+  <h4>Sweden (Effekttariff)</h4>
   <p>The Swedish effekttariff charges based on the average of your 2-3 highest
   hourly consumption peaks during the month.</p>
+  <ul>
+    <li>Tracks hourly (60-minute) average consumption</li>
+    <li>Records top 2-3 peaks per month (configurable)</li>
+    <li>Only measures during peak hours and peak season</li>
+    <li>Resets on the 1st of each month</li>
+  </ul>
+
+  <h4>Belgium (Capaciteitstarief)</h4>
+  <p>The Belgian capacity tariff charges based on a 12-month rolling average
+  of your monthly peak consumption.</p>
+  <ul>
+    <li>Tracks 15-minute (quarter-hourly) peaks</li>
+    <li>Records only the single highest peak per month</li>
+    <li>Measures 24/7, all year (no peak hours or seasons)</li>
+    <li>Annual billing based on 12-month rolling average (~€50/kW/year)</li>
+  </ul>
 
   <p>This node:</p>
   <ul>
-    <li>Tracks hourly average consumption</li>
+    <li>Tracks consumption at configurable intervals (15/30/60 min)</li>
     <li>Records top peaks for the month</li>
     <li>Outputs a current limit to keep new peaks below existing ones</li>
     <li>Resets automatically on the 1st of each month</li>

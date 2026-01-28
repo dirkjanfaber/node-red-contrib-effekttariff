@@ -1101,4 +1101,236 @@ describe('peak-tracker', () => {
       })
     })
   })
+
+  // ============================================================================
+  // Belgium Mode Tests (Capaciteitstarief)
+  // ============================================================================
+
+  describe('Belgium Mode', () => {
+    describe('Region Presets', () => {
+      it('should apply Sweden preset correctly', () => {
+        const config = peakTracker.mergeConfig({ region: 'sweden' })
+
+        expect(config.measurementIntervalMinutes).toBe(60)
+        expect(config.singlePeakMode).toBe(false)
+        expect(config.annualBillingEnabled).toBe(false)
+        expect(config.peakCount).toBe(3)
+        expect(config.peakSeasonOnly).toBe(true)
+      })
+
+      it('should apply Belgium preset correctly', () => {
+        const config = peakTracker.mergeConfig({ region: 'belgium' })
+
+        expect(config.measurementIntervalMinutes).toBe(15)
+        expect(config.singlePeakMode).toBe(true)
+        expect(config.annualBillingEnabled).toBe(true)
+        expect(config.rollingMonths).toBe(12)
+        expect(config.peakCount).toBe(1)
+        expect(config.peakSeasonOnly).toBe(false)
+        expect(config.peakHoursStart).toBe(0)
+        expect(config.peakHoursEnd).toBe(24)
+      })
+
+      it('should allow user overrides on top of preset', () => {
+        const config = peakTracker.mergeConfig({
+          region: 'belgium',
+          minimumLimitKw: 3 // Override default
+        })
+
+        expect(config.measurementIntervalMinutes).toBe(15) // From preset
+        expect(config.minimumLimitKw).toBe(3) // User override
+      })
+
+      it('should return available presets', () => {
+        const presets = peakTracker.getRegionPresets()
+
+        expect(presets).toHaveProperty('sweden')
+        expect(presets).toHaveProperty('belgium')
+        expect(presets.belgium.measurementIntervalMinutes).toBe(15)
+      })
+    })
+
+    describe('Interval Tracking', () => {
+      it('should calculate interval ID for 15-minute intervals', () => {
+        // Test that minutes are snapped to 15-minute boundaries
+        // Using fixed times to test the snapping logic
+        const date1 = new Date(2024, 0, 15, 10, 7, 30) // 10:07:30 -> should snap to :00
+        const date2 = new Date(2024, 0, 15, 10, 22, 15) // 10:22:15 -> should snap to :15
+        const date3 = new Date(2024, 0, 15, 10, 45, 0) // 10:45:00 -> should snap to :45
+
+        const id1 = peakTracker.getIntervalId(date1, 15)
+        const id2 = peakTracker.getIntervalId(date2, 15)
+        const id3 = peakTracker.getIntervalId(date3, 15)
+
+        // Verify the intervals are different (snapping works)
+        expect(id1).not.toBe(id2)
+        expect(id2).not.toBe(id3)
+
+        // Verify same interval returns same ID
+        const date1b = new Date(2024, 0, 15, 10, 14, 59) // Still in :00 interval
+        expect(peakTracker.getIntervalId(date1b, 15)).toBe(id1)
+      })
+
+      it('should calculate interval ID for 30-minute intervals', () => {
+        const date1 = new Date(2024, 0, 15, 10, 14, 0) // 10:14:00 -> should snap to :00
+        const date2 = new Date(2024, 0, 15, 10, 45, 0) // 10:45:00 -> should snap to :30
+
+        const id1 = peakTracker.getIntervalId(date1, 30)
+        const id2 = peakTracker.getIntervalId(date2, 30)
+
+        // Verify they're different intervals
+        expect(id1).not.toBe(id2)
+
+        // Verify same interval returns same ID
+        const date1b = new Date(2024, 0, 15, 10, 29, 59)
+        expect(peakTracker.getIntervalId(date1b, 30)).toBe(id1)
+      })
+
+      it('should extract hour from interval ID', () => {
+        expect(peakTracker.getHourFromIntervalId('2024-01-15T10:15')).toBe(10)
+        expect(peakTracker.getHourFromIntervalId('2024-01-15T23:45')).toBe(23)
+        expect(peakTracker.getHourFromIntervalId('2024-01-15T00:00')).toBe(0)
+      })
+    })
+
+    describe('Single Peak Mode', () => {
+      it('should record single peak correctly', () => {
+        const state = peakTracker.createInitialState()
+
+        const result1 = peakTracker.recordSinglePeak(state, '2024-01-15T10:00', 3000, 3000)
+        expect(result1).toBe('updated')
+        expect(state.currentMonthPeak.effective).toBe(3000)
+
+        // Lower peak should not update
+        const result2 = peakTracker.recordSinglePeak(state, '2024-01-15T11:00', 2000, 2000)
+        expect(result2).toBe('kept')
+        expect(state.currentMonthPeak.effective).toBe(3000)
+
+        // Higher peak should update
+        const result3 = peakTracker.recordSinglePeak(state, '2024-01-15T12:00', 5000, 5000)
+        expect(result3).toBe('updated')
+        expect(state.currentMonthPeak.effective).toBe(5000)
+      })
+
+      it('should track single peak in processGridPower', () => {
+        const state = peakTracker.createInitialState()
+        const config = peakTracker.mergeConfig({
+          region: 'belgium',
+          singlePeakMode: true,
+          measurementIntervalMinutes: 60, // Use hourly for easier testing
+          peakHoursStart: 0,
+          peakHoursEnd: 24,
+          peakSeasonOnly: false
+        })
+
+        // Process an hour of data
+        for (let i = 0; i < 60; i++) {
+          const now = new Date(`2024-01-15T10:${String(i).padStart(2, '0')}:00`)
+          peakTracker.processGridPower(state, config, 3000, now, null)
+        }
+
+        // Trigger hour completion
+        const now = new Date('2024-01-15T11:00:00')
+        const result = peakTracker.processGridPower(state, config, 2000, now, null)
+
+        expect(result.hourCompleted).not.toBeNull()
+        expect(state.currentMonthPeak).not.toBeNull()
+        expect(state.currentMonthPeak.effective).toBe(3000)
+      })
+    })
+
+    describe('Rolling Average', () => {
+      it('should store monthly peak at month boundary', () => {
+        const state = peakTracker.createInitialState()
+        const config = peakTracker.mergeConfig({
+          annualBillingEnabled: true,
+          rollingMonths: 12
+        })
+
+        // Set up January peak
+        state.currentMonthPeak = { date: '2024-01-15', time: '10:00', value: 5000, effective: 5000 }
+
+        peakTracker.storeMonthlyPeak(state, config, 2024, 1)
+
+        expect(state.monthlyPeaks.length).toBe(1)
+        expect(state.monthlyPeaks[0].month).toBe('2024-01')
+        expect(state.monthlyPeaks[0].peakW).toBe(5000)
+      })
+
+      it('should calculate rolling average correctly', () => {
+        const state = peakTracker.createInitialState()
+        state.monthlyPeaks = [
+          { month: '2024-01', peakW: 5000 },
+          { month: '2024-02', peakW: 4000 },
+          { month: '2024-03', peakW: 6000 }
+        ]
+
+        const config = peakTracker.mergeConfig({
+          annualBillingEnabled: true,
+          rollingMonths: 12
+        })
+
+        const avg = peakTracker.calculateRollingAverage(state, config)
+        expect(avg).toBe(5000) // (5000 + 4000 + 6000) / 3
+      })
+
+      it('should keep only last N months', () => {
+        const state = peakTracker.createInitialState()
+        const config = peakTracker.mergeConfig({
+          annualBillingEnabled: true,
+          rollingMonths: 3 // Use 3 for testing
+        })
+
+        // Add 4 months of peaks
+        for (let i = 1; i <= 4; i++) {
+          state.currentMonthPeak = { effective: i * 1000 }
+          peakTracker.storeMonthlyPeak(state, config, 2024, i)
+          state.currentMonthPeak = null
+        }
+
+        expect(state.monthlyPeaks.length).toBe(3) // Should only keep 3
+        expect(state.monthlyPeaks[0].month).toBe('2024-02') // First month dropped
+      })
+
+      it('should return 0 when no monthly peaks', () => {
+        const state = peakTracker.createInitialState()
+        const config = peakTracker.mergeConfig({ annualBillingEnabled: true })
+
+        const avg = peakTracker.calculateRollingAverage(state, config)
+        expect(avg).toBe(0)
+      })
+    })
+
+    describe('State Migration', () => {
+      it('should add missing Belgium fields to old state', () => {
+        const oldState = {
+          currentMonth: 1,
+          peaks: [],
+          currentHour: 10,
+          currentHourSum: 1000,
+          currentHourSamples: 2,
+          lastOutputLimitA: 10
+        }
+
+        const migratedState = peakTracker.migrateState(oldState)
+
+        expect(migratedState.currentInterval).toBeNull()
+        expect(migratedState.currentIntervalSum).toBe(0)
+        expect(migratedState.currentIntervalSamples).toBe(0)
+        expect(migratedState.currentMonthPeak).toBeNull()
+        expect(migratedState.monthlyPeaks).toEqual([])
+        // Original fields preserved
+        expect(migratedState.currentMonth).toBe(1)
+        expect(migratedState.peaks).toEqual([])
+      })
+
+      it('should return new state when input is null', () => {
+        const migratedState = peakTracker.migrateState(null)
+
+        expect(migratedState).not.toBeNull()
+        expect(migratedState.currentMonth).toBeNull()
+        expect(migratedState.monthlyPeaks).toEqual([])
+      })
+    })
+  })
 })
