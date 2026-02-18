@@ -7,8 +7,14 @@
  * Usage:
  *   node scripts/generate-index.js
  *
- * This script runs all simulations and generates an index.html
+ * This script runs all simulations and generates a tabbed index.html
  * showing each scenario with its baseline vs achieved peak savings.
+ *
+ * Tab structure:
+ *   - General: country-agnostic algorithm scenarios
+ *   - One tab per country (Sweden, Belgium, …)
+ *
+ * To add a new country, add an entry to TABS below and list its scenarios.
  */
 
 const { runSimulation } = require('../lib/simulation')
@@ -18,17 +24,56 @@ const path = require('path')
 
 const outputDir = path.join(process.cwd(), 'docs', 'simulations')
 
-// Ensure output directory exists
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true })
 }
 
+// ---------------------------------------------------------------------------
+// Tab / category configuration
+// ---------------------------------------------------------------------------
+
+const TABS = {
+  general: {
+    label: 'General',
+    description: 'Country-agnostic scenarios that test core algorithm features — peak tracking, battery, resilience.',
+    categories: [
+      { title: '📊 Basic Scenarios', scenarios: ['basicWeek', 'fullMonth', 'highSpikes', 'stressTest', 'learningCarryover'] },
+      { title: '🔧 Installation Types', scenarios: ['singlePhase', 'minimumLimit'] },
+      { title: '🔋 Battery Features', scenarios: ['batteryCharging', 'batteryBalancing', 'dynamicHeadroom'] },
+      { title: '🛡️ Resilience', scenarios: ['downtimeDetection'] }
+    ]
+  },
+  sweden: {
+    label: '🇸🇪 Sweden',
+    description: 'Swedish <em>effekttariff</em> — monthly fee based on the average of your top 3 peak hours.',
+    currency: 'SEK',
+    savingLabel: 'SEK/month',
+    getSaving: r => r.savingSek,
+    categories: [
+      { title: '⚡ Provider Configurations', scenarios: ['nightDiscount', 'weekdaysOnly', 'winterSeason', 'jonkoping'] }
+    ]
+  },
+  belgium: {
+    label: '🇧🇪 Belgium',
+    description: 'Belgian <em>capaciteitstarief</em> — annual fee based on a 12-month rolling average of monthly peak 15-min intervals.',
+    currency: 'EUR',
+    savingLabel: '€/month',
+    getSaving: r => r.savingEur,
+    categories: [
+      { title: '⚡ Belgium Scenarios', scenarios: ['belgiumBasic', 'belgiumWithEV', 'belgiumAnnualRolling'] }
+    ]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Run all simulations
+// ---------------------------------------------------------------------------
+
 console.log('Generating simulation index with savings data...\n')
 
-// Run all simulations and collect results
 const results = []
-
 const scenarioList = listScenarios()
+
 scenarioList.forEach((s, index) => {
   const scenario = scenarios[s.key]
   console.log(`[${index + 1}/${scenarioList.length}] Running: ${s.key}`)
@@ -44,7 +89,7 @@ scenarioList.forEach((s, index) => {
       samplesPerHour: 6
     })
 
-    const analysis = simResults.summary.analysis
+    const { analysis, belgiumMode } = simResults.summary
     const hasBattery = scenario.config.batteryEnabled === true
 
     results.push({
@@ -53,71 +98,50 @@ scenarioList.forEach((s, index) => {
       description: s.description,
       durationDays: s.durationDays,
       hasBattery,
+      belgiumMode: belgiumMode || false,
       baselineKw: analysis.baselinePeakAverageKw,
       achievedKw: analysis.achievedPeakAverageKw,
       reductionPercent: analysis.reductionPercent,
       reductionKw: analysis.reductionKw,
-      savingSek: analysis.estimatedMonthlySavingSek
+      savingSek: analysis.estimatedMonthlySavingSek,
+      savingEur: analysis.estimatedMonthlySavingsEur || 0,
+      savingAnnualEur: analysis.estimatedAnnualSavingsEur || 0
     })
 
-    console.log(`   → ${hasBattery ? `${analysis.reductionPercent}% reduction` : 'tracking only'} (${analysis.achievedPeakAverageKw} kW)`)
+    const saving = belgiumMode
+      ? `€${analysis.estimatedMonthlySavingsEur || 0}/month`
+      : `${analysis.estimatedMonthlySavingSek} SEK/month`
+    console.log(`   → ${hasBattery ? `${analysis.reductionPercent}% reduction, ${saving}` : 'tracking only'} (${analysis.achievedPeakAverageKw} kW)`)
   } catch (err) {
     console.error(`   Error: ${err.message}`)
-    results.push({
-      key: s.key,
-      name: s.name,
-      description: s.description,
-      durationDays: s.durationDays,
-      error: true
-    })
+    results.push({ key: s.key, name: s.name, description: s.description, durationDays: s.durationDays, error: true })
   }
 })
 
-// Group scenarios by category
-const categories = {
-  basic: {
-    title: 'Basic Scenarios',
-    icon: '📊',
-    scenarios: ['basicWeek', 'fullMonth', 'highSpikes', 'stressTest', 'learningCarryover']
-  },
-  providers: {
-    title: 'Swedish Provider Configurations',
-    icon: '🇸🇪',
-    scenarios: ['nightDiscount', 'weekdaysOnly', 'winterSeason', 'jonkoping']
-  },
-  installation: {
-    title: 'Installation Types',
-    icon: '🔧',
-    scenarios: ['singlePhase', 'minimumLimit']
-  },
-  battery: {
-    title: 'Battery Features',
-    icon: '🔋',
-    scenarios: ['batteryCharging', 'batteryBalancing', 'dynamicHeadroom']
-  },
-  resilience: {
-    title: 'Resilience Features',
-    icon: '🛡️',
-    scenarios: ['downtimeDetection']
-  }
-}
+// ---------------------------------------------------------------------------
+// HTML generation helpers
+// ---------------------------------------------------------------------------
 
-// Generate HTML
-function generateSavingsBadge (result) {
-  if (result.error) {
-    return '<span class="badge badge-error">Error</span>'
-  }
-  if (!result.hasBattery) {
-    return `<span class="badge badge-tracking">${result.achievedKw} kW tracked</span>`
-  }
+const resultMap = {}
+results.forEach(r => { resultMap[r.key] = r })
+
+function savingsBadge (result, tabCfg) {
+  if (result.error) return '<span class="badge badge-error">Error</span>'
+  if (!result.hasBattery) return `<span class="badge badge-tracking">${result.achievedKw} kW tracked</span>`
   if (result.reductionPercent > 0) {
-    return `<span class="badge badge-savings">-${result.reductionPercent}% (${result.reductionKw} kW saved)</span>`
+    return `<span class="badge badge-savings">&#8209;${result.reductionPercent}% (${result.reductionKw} kW saved)</span>`
   }
   return `<span class="badge badge-neutral">${result.achievedKw} kW</span>`
 }
 
-function generateScenarioItem (result) {
-  const badge = generateSavingsBadge(result)
+function savingDetail (result, tabCfg) {
+  if (!result.hasBattery || result.error || !tabCfg) return ''
+  const value = tabCfg.getSaving ? tabCfg.getSaving(result) : result.savingSek
+  if (!value || value <= 0) return ''
+  return `<span class="saving-detail">~${value} ${tabCfg.savingLabel}</span>`
+}
+
+function scenarioItem (result, tabCfg) {
   return `
       <li>
         <div class="scenario-header">
@@ -125,40 +149,82 @@ function generateScenarioItem (result) {
           <span class="duration">${result.durationDays} days</span>
         </div>
         <div class="scenario-meta">
-          ${badge}
-          ${result.hasBattery && result.reductionPercent > 0 ? `<span class="saving-detail">~${result.savingSek} SEK/month</span>` : ''}
+          ${savingsBadge(result, tabCfg)}
+          ${savingDetail(result, tabCfg)}
         </div>
         <div class="description">${result.description}</div>
       </li>`
 }
 
-const resultMap = {}
-results.forEach(r => { resultMap[r.key] = r })
+function tabMiniStats (tabKey, tabCfg) {
+  if (!tabCfg.getSaving) return '' // general tab — no single currency
 
-let categorySections = ''
-for (const [catKey, cat] of Object.entries(categories)) {
-  const items = cat.scenarios
-    .filter(key => resultMap[key])
-    .map(key => generateScenarioItem(resultMap[key]))
-    .join('\n')
+  const tabScenarios = tabCfg.categories.flatMap(c => c.scenarios)
+  const batteryResults = tabScenarios
+    .map(k => resultMap[k])
+    .filter(r => r && !r.error && r.hasBattery)
 
-  if (items) {
-    categorySections += `
-  <div class="category">
-    <h2>${cat.icon} ${cat.title}</h2>
-    <ul class="scenario-list">
-      ${items}
-    </ul>
+  if (batteryResults.length === 0) return ''
+
+  const avgReduction = Math.round(batteryResults.reduce((s, r) => s + r.reductionPercent, 0) / batteryResults.length)
+  const avgSaving = Math.round(batteryResults.reduce((s, r) => s + (tabCfg.getSaving(r) || 0), 0) / batteryResults.length)
+
+  return `
+  <div class="tab-stats">
+    <div class="tab-stat"><span class="tab-stat-value">${batteryResults.length}</span><span class="tab-stat-label">Battery scenarios</span></div>
+    <div class="tab-stat"><span class="tab-stat-value">${avgReduction}%</span><span class="tab-stat-label">Avg peak reduction</span></div>
+    <div class="tab-stat"><span class="tab-stat-value">~${avgSaving} ${tabCfg.currency}</span><span class="tab-stat-label">Avg saving / month</span></div>
   </div>`
-  }
 }
 
-// Summary stats
-const batteryScenarios = results.filter(r => r.hasBattery && !r.error)
-const totalSavings = batteryScenarios.reduce((sum, r) => sum + (r.savingSek || 0), 0)
-const avgReduction = batteryScenarios.length > 0
-  ? Math.round(batteryScenarios.reduce((sum, r) => sum + r.reductionPercent, 0) / batteryScenarios.length)
+function tabPanel (tabKey, tabCfg) {
+  let sections = ''
+  for (const cat of tabCfg.categories) {
+    const items = cat.scenarios
+      .filter(k => resultMap[k])
+      .map(k => scenarioItem(resultMap[k], tabCfg))
+      .join('\n')
+
+    if (items) {
+      sections += `
+  <div class="category">
+    <h2>${cat.title}</h2>
+    <ul class="scenario-list">${items}
+    </ul>
+  </div>`
+    }
+  }
+
+  return `
+<div id="tab-${tabKey}" class="tab-panel${tabKey === 'general' ? ' active' : ''}">
+  <p class="tab-description">${tabCfg.description}</p>
+  ${tabMiniStats(tabKey, tabCfg)}
+  ${sections}
+</div>`
+}
+
+// ---------------------------------------------------------------------------
+// Overall summary stats
+// ---------------------------------------------------------------------------
+
+const allBatteryResults = results.filter(r => !r.error && r.hasBattery)
+const avgReductionOverall = allBatteryResults.length > 0
+  ? Math.round(allBatteryResults.reduce((s, r) => s + r.reductionPercent, 0) / allBatteryResults.length)
   : 0
+
+const countryCount = Object.keys(TABS).filter(k => k !== 'general').length
+
+// ---------------------------------------------------------------------------
+// Assemble final HTML
+// ---------------------------------------------------------------------------
+
+const tabButtons = Object.entries(TABS)
+  .map(([key, cfg], i) => `<button class="tab-btn${i === 0 ? ' active' : ''}" data-tab="${key}">${cfg.label}</button>`)
+  .join('\n    ')
+
+const tabPanels = Object.entries(TABS)
+  .map(([key, cfg]) => tabPanel(key, cfg))
+  .join('\n')
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -184,106 +250,90 @@ const html = `<!DOCTYPE html>
       border-radius: 12px;
       margin-bottom: 25px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 15px;
       text-align: center;
     }
-    .summary-item { }
     .summary-value { font-size: 28px; font-weight: 700; }
     .summary-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
-    .category {
-      margin-top: 25px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-    }
-    .category:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
-    .category h2 {
-      color: #444;
-      font-size: 1.1em;
-      margin-bottom: 15px;
-    }
-    .scenario-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .scenario-list li {
-      background: white;
-      margin: 10px 0;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-    .scenario-header {
+
+    /* Tabs */
+    .tabs {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+      gap: 4px;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 0;
     }
-    .scenario-list a {
-      color: #0066cc;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 1.05em;
-    }
-    .scenario-list a:hover { text-decoration: underline; }
-    .duration {
-      color: #888;
-      font-size: 0.8em;
-    }
-    .scenario-meta {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.8em;
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.95em;
       font-weight: 500;
-    }
-    .badge-savings {
-      background: #d4edda;
-      color: #155724;
-    }
-    .badge-tracking {
-      background: #e2e3e5;
-      color: #383d41;
-    }
-    .badge-neutral {
-      background: #fff3cd;
-      color: #856404;
-    }
-    .badge-error {
-      background: #f8d7da;
-      color: #721c24;
-    }
-    .saving-detail {
-      color: #28a745;
-      font-size: 0.85em;
-      font-weight: 500;
-    }
-    .description {
       color: #666;
-      font-size: 0.9em;
+      border-radius: 6px 6px 0 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
     }
-    .meta {
-      color: #999;
-      font-size: 0.8em;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
+    .tab-btn:hover { color: #333; background: #eee; }
+    .tab-btn.active { color: #5a3e8e; border-bottom-color: #5a3e8e; background: white; }
+    .tab-panel { display: none; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .tab-panel.active { display: block; }
+    .tab-description { color: #666; margin: 0 0 18px; line-height: 1.5; }
+
+    /* Per-tab mini stats */
+    .tab-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
+    .tab-stat {
+      background: #f0ecf9;
+      border-radius: 8px;
+      padding: 12px 18px;
+      text-align: center;
+      flex: 1;
+      min-width: 120px;
+    }
+    .tab-stat-value { display: block; font-size: 1.5em; font-weight: 700; color: #5a3e8e; }
+    .tab-stat-label { display: block; font-size: 0.75em; color: #666; text-transform: uppercase; margin-top: 2px; }
+
+    /* Scenario list */
+    .category { margin-top: 22px; padding-top: 18px; border-top: 1px solid #eee; }
+    .category:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+    .category h2 { color: #444; font-size: 1.05em; margin-bottom: 12px; }
+    .scenario-list { list-style: none; padding: 0; margin: 0; }
+    .scenario-list li {
+      background: #fafafa;
+      margin: 8px 0;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+    .scenario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+    .scenario-list a { color: #0066cc; text-decoration: none; font-weight: 600; font-size: 1.02em; }
+    .scenario-list a:hover { text-decoration: underline; }
+    .duration { color: #999; font-size: 0.8em; }
+    .scenario-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 500; }
+    .badge-savings { background: #d4edda; color: #155724; }
+    .badge-tracking { background: #e2e3e5; color: #383d41; }
+    .badge-neutral { background: #fff3cd; color: #856404; }
+    .badge-error { background: #f8d7da; color: #721c24; }
+    .saving-detail { color: #28a745; font-size: 0.83em; font-weight: 500; }
+    .description { color: #777; font-size: 0.88em; line-height: 1.4; }
+    .meta { color: #999; font-size: 0.8em; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; }
     .meta a { color: #666; }
   </style>
 </head>
 <body>
   <h1>🔌 Effekttariff Simulation Reports</h1>
   <p class="intro">
-    Interactive simulation reports for the Swedish effekttariff peak shaving system.
-    Each report includes analysis showing baseline vs achieved peaks, charts, and battery behavior.
+    Simulation reports for capacity tariff peak shaving. Each report shows baseline vs achieved peaks,
+    potential savings, and battery behaviour where applicable.
   </p>
 
   <div class="summary-box">
@@ -292,29 +342,42 @@ const html = `<!DOCTYPE html>
       <div class="summary-label">Scenarios</div>
     </div>
     <div class="summary-item">
-      <div class="summary-value">${batteryScenarios.length}</div>
+      <div class="summary-value">${countryCount}</div>
+      <div class="summary-label">Countries</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-value">${allBatteryResults.length}</div>
       <div class="summary-label">With Battery</div>
     </div>
     <div class="summary-item">
-      <div class="summary-value">${avgReduction}%</div>
-      <div class="summary-label">Avg Reduction</div>
-    </div>
-    <div class="summary-item">
-      <div class="summary-value">~${Math.round(totalSavings / batteryScenarios.length)} SEK</div>
-      <div class="summary-label">Avg Monthly Saving</div>
+      <div class="summary-value">${avgReductionOverall}%</div>
+      <div class="summary-label">Avg Peak Reduction</div>
     </div>
   </div>
 
-  ${categorySections}
+  <div class="tabs">
+    ${tabButtons}
+  </div>
+
+  ${tabPanels}
 
   <p class="meta">
     Generated from <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">node-red-contrib-effekttariff</a>.
     Reports are updated when code changes are pushed to the main branch.
   </p>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn, .tab-panel').forEach(el => el.classList.remove('active'))
+        btn.classList.add('active')
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active')
+      })
+    })
+  </script>
 </body>
 </html>`
 
-// Write index.html
 const indexPath = path.join(outputDir, 'index.html')
 fs.writeFileSync(indexPath, html)
 console.log(`\nIndex generated: ${indexPath}`)
