@@ -1,0 +1,601 @@
+[
+    {
+        "id": "777cfdb0e4fbda45",
+        "type": "tab",
+        "label": "Dirk-Jan - effekttariff",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "de312fa430ee95b3",
+        "type": "group",
+        "z": "777cfdb0e4fbda45",
+        "name": "Charting",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "e90efbfa046dc76e",
+            "0dc5c4d652fc60d2",
+            "7fd197ec194c9ca8",
+            "f75d6edadee90898",
+            "7edb51fd01dd0e24"
+        ],
+        "x": 44,
+        "y": 459,
+        "w": 582,
+        "h": 122
+    },
+    {
+        "id": "4a672d09a74aaed1",
+        "type": "victron-input-gridmeter",
+        "z": "777cfdb0e4fbda45",
+        "service": "com.victronenergy.grid/30",
+        "path": "/Ac/Power",
+        "serviceObj": {
+            "service": "com.victronenergy.grid/30",
+            "name": "Grid meter"
+        },
+        "pathObj": {
+            "path": "/Ac/Power",
+            "type": "float",
+            "name": "Power (W)"
+        },
+        "name": "",
+        "onlyChanges": true,
+        "roundValues": "0",
+        "rateLimit": "1",
+        "x": 160,
+        "y": 240,
+        "wires": [
+            [
+                "39055168fe0dd570"
+            ]
+        ]
+    },
+    {
+        "id": "c72ff3435a5c76bf",
+        "type": "debug",
+        "z": "777cfdb0e4fbda45",
+        "name": "peak shaving (A)",
+        "active": false,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 690,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "9134398f6f96fc03",
+        "type": "debug",
+        "z": "777cfdb0e4fbda45",
+        "name": "status",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "6c33b7ff9ecd69a1",
+        "type": "victron-output-vebus",
+        "z": "777cfdb0e4fbda45",
+        "service": "com.victronenergy.vebus/276",
+        "path": "/Ac/In/1/CurrentLimit",
+        "serviceObj": {
+            "service": "com.victronenergy.vebus/276",
+            "name": "MultiPlus-II 48/5000/70-50"
+        },
+        "pathObj": {
+            "path": "/Ac/In/1/CurrentLimit",
+            "type": "float",
+            "name": "Input 1 current limit (A)",
+            "mode": "both"
+        },
+        "name": "",
+        "onlyChanges": false,
+        "rateLimit": 0,
+        "x": 790,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "39055168fe0dd570",
+        "type": "effekttariff",
+        "z": "777cfdb0e4fbda45",
+        "name": "",
+        "region": "sweden",
+        "measurementInterval": "15",
+        "singlePeakMode": false,
+        "annualBillingEnabled": false,
+        "rollingMonths": "",
+        "peakCount": 3,
+        "onePeakPerDay": true,
+        "peakHoursStart": 7,
+        "peakHoursEnd": "21",
+        "weekdaysOnly": false,
+        "nightDiscount": false,
+        "peakSeasonOnly": true,
+        "peakSeasonStart": 11,
+        "peakSeasonEnd": 3,
+        "minimumLimit": "5",
+        "headroom": 0.3,
+        "phases": 3,
+        "gridVoltage": 230,
+        "maxBreakerCurrent": 25,
+        "batteryEnabled": true,
+        "socContextKey": "victronenergy.system._0.Dc.Battery.Soc",
+        "minSocContextKey": "victronenergy.system._0.Control.ActiveSocLimit",
+        "batteryCapacity": "41",
+        "maxChargeRate": 3000,
+        "socBuffer": 20,
+        "forecastSource": "none",
+        "forecastContextKey": "",
+        "morningPeakStart": "",
+        "morningPeakEnd": "",
+        "morningPeakWeight": "",
+        "eveningPeakStart": "",
+        "eveningPeakEnd": "",
+        "eveningPeakWeight": "",
+        "budgetBuffer": "",
+        "batteryBalancingEnabled": true,
+        "batteryBalancingSocThreshold": "80",
+        "batteryBalancingTargetSoc": "100",
+        "batteryBalancingHoldHours": "2",
+        "batteryBalancingStartTime": "20",
+        "batteryBalancingEndTime": "6",
+        "dynamicHeadroomEnabled": false,
+        "dynamicHeadroomRules": "",
+        "downtimeDetectionEnabled": true,
+        "downtimeDetectionTriggerHours": "2",
+        "downtimeDetectionAction": "log",
+        "learningMode": "learning",
+        "previousMonthCarryover": "",
+        "debugMode": true,
+        "x": 370,
+        "y": 240,
+        "wires": [
+            [
+                "c72ff3435a5c76bf",
+                "6c33b7ff9ecd69a1"
+            ],
+            [
+                "9134398f6f96fc03"
+            ],
+            [
+                "6270accef0c4cc0c",
+                "510a57098ff08747"
+            ],
+            [
+                "61b52c3c3d5e9534"
+            ],
+            [
+                "56a81154c14f20ed"
+            ]
+        ]
+    },
+    {
+        "id": "e90efbfa046dc76e",
+        "type": "debug",
+        "z": "777cfdb0e4fbda45",
+        "g": "de312fa430ee95b3",
+        "name": "chart data",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 230,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "6270accef0c4cc0c",
+        "type": "debug",
+        "z": "777cfdb0e4fbda45",
+        "name": "charge rate",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 670,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "afea9771be9494f3",
+        "type": "victron-input-system",
+        "z": "777cfdb0e4fbda45",
+        "service": "com.victronenergy.system/0",
+        "path": "/Control/ActiveSocLimit",
+        "serviceObj": {
+            "service": "com.victronenergy.system/0",
+            "name": "Venus system"
+        },
+        "pathObj": {
+            "path": "/Control/ActiveSocLimit",
+            "type": "integer",
+            "name": "ESS active SOC limit (%)"
+        },
+        "name": "",
+        "onlyChanges": true,
+        "rateLimit": 0,
+        "x": 220,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4983cd7e867ccdde",
+        "type": "victron-input-system",
+        "z": "777cfdb0e4fbda45",
+        "service": "com.victronenergy.system/0",
+        "path": "/Dc/Battery/Soc",
+        "serviceObj": {
+            "service": "com.victronenergy.system/0",
+            "name": "Venus system"
+        },
+        "pathObj": {
+            "path": "/Dc/Battery/Soc",
+            "type": "float",
+            "name": "Battery State of Charge (%)"
+        },
+        "name": "",
+        "onlyChanges": true,
+        "roundValues": "1",
+        "rateLimit": 0,
+        "x": 220,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "510a57098ff08747",
+        "type": "victron-output-ess",
+        "z": "777cfdb0e4fbda45",
+        "service": "com.victronenergy.settings",
+        "path": "/Settings/CGwacs/AcPowerSetPoint",
+        "serviceObj": {
+            "service": "com.victronenergy.settings",
+            "name": "Venus settings"
+        },
+        "pathObj": {
+            "path": "/Settings/CGwacs/AcPowerSetPoint",
+            "type": "integer",
+            "name": "Grid set-point (W)",
+            "mode": "both"
+        },
+        "name": "",
+        "onlyChanges": false,
+        "rateLimit": 0,
+        "x": 740,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "0dc5c4d652fc60d2",
+        "type": "ui-chart",
+        "z": "777cfdb0e4fbda45",
+        "g": "de312fa430ee95b3",
+        "group": "6f0a78e5d60d0c16",
+        "name": "Effekttariff - Rest",
+        "label": "Consumption, limit, average",
+        "order": 1,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "",
+        "xAxisPropertyType": "timestamp",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "",
+        "yAxisProperty": "payload",
+        "yAxisPropertyType": "msg",
+        "ymin": "",
+        "ymax": "",
+        "bins": 10,
+        "action": "append",
+        "stackSeries": false,
+        "pointShape": "false",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": 1,
+        "removeOlderUnit": "86400",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": 6,
+        "height": 8,
+        "className": "",
+        "interpolation": "linear",
+        "x": 470,
+        "y": 540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "56a81154c14f20ed",
+        "type": "debug",
+        "z": "777cfdb0e4fbda45",
+        "name": "debug effekttariff",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "7fd197ec194c9ca8",
+        "type": "switch",
+        "z": "777cfdb0e4fbda45",
+        "g": "de312fa430ee95b3",
+        "name": "Split on topic",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "battery_soc",
+                "vt": "str"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 230,
+        "y": 500,
+        "wires": [
+            [
+                "f75d6edadee90898"
+            ],
+            [
+                "0dc5c4d652fc60d2"
+            ]
+        ]
+    },
+    {
+        "id": "f75d6edadee90898",
+        "type": "ui-chart",
+        "z": "777cfdb0e4fbda45",
+        "g": "de312fa430ee95b3",
+        "group": "6f0a78e5d60d0c16",
+        "name": "Effekttariff - Battery SOC",
+        "label": "Battery SOC",
+        "order": 1,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "",
+        "xAxisPropertyType": "timestamp",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "",
+        "yAxisProperty": "payload",
+        "yAxisPropertyType": "msg",
+        "ymin": "0",
+        "ymax": "100",
+        "bins": 10,
+        "action": "append",
+        "stackSeries": false,
+        "pointShape": "false",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": 1,
+        "removeOlderUnit": "86400",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": 6,
+        "height": 8,
+        "className": "",
+        "interpolation": "linear",
+        "x": 490,
+        "y": 500,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "61b52c3c3d5e9534",
+        "type": "link out",
+        "z": "777cfdb0e4fbda45",
+        "name": "link out 1",
+        "mode": "link",
+        "links": [
+            "7edb51fd01dd0e24"
+        ],
+        "x": 625,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "7edb51fd01dd0e24",
+        "type": "link in",
+        "z": "777cfdb0e4fbda45",
+        "g": "de312fa430ee95b3",
+        "name": "link in 1",
+        "links": [
+            "61b52c3c3d5e9534"
+        ],
+        "x": 85,
+        "y": 500,
+        "wires": [
+            [
+                "e90efbfa046dc76e",
+                "7fd197ec194c9ca8"
+            ]
+        ]
+    },
+    {
+        "id": "6f0a78e5d60d0c16",
+        "type": "ui-group",
+        "name": "Graphs",
+        "page": "f5296b12455be732",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "f5296b12455be732",
+        "type": "ui-page",
+        "name": "Effekttariff",
+        "ui": "3846da7c51b248a3",
+        "path": "/page1",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "3e6e40b2c8c848b5",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "3846da7c51b248a3",
+        "type": "ui-base",
+        "name": "My Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "3e6e40b2c8c848b5",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "311b8e2d311ff98f",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@victronenergy/node-red-contrib-victron": "1.6.55",
+            "node-red-contrib-effekttariff": "0.1.6",
+            "@flowfuse/node-red-dashboard": "1.30.1"
+        }
+    }
+]
