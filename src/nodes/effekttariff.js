@@ -70,6 +70,9 @@ module.exports = function (RED) {
     // State file in Node-RED user directory — works without any context storage configuration
     const stateFile = path.join(RED.settings.userDir, 'effekttariff', `${node.id}.json`)
 
+    // Flow context key — makes current state readable by other nodes and the context viewer
+    const storageKey = `effekttariff_${node.id}`
+
     const loadedState = peakTracker.loadStateFromFile(stateFile)
     const state = peakTracker.migrateState(loadedState || peakTracker.createInitialState())
 
@@ -448,7 +451,10 @@ module.exports = function (RED) {
           peakTracker.updateLastOutput(state, result.outputLimitA)
         }
 
-        // Save state periodically (every 5 minutes or on first sample of hour)
+        // Always publish to flow context so other nodes and the context viewer see current state
+        node.context().flow.set(storageKey, state)
+
+        // Persist to filesystem periodically (every 5 minutes or on significant events)
         const shouldSave = (Date.now() - (state.lastSave || 0) > 300000) ||
                           result.hourCompleted ||
                           shouldOutput ||
