@@ -399,29 +399,31 @@ module.exports = function (RED) {
           }
         }
 
-        // Output 4: Chart data (FlowFuse Dashboard 2.0 format)
-        // Send array of messages for different series
-        const timestamp = now.getTime()
+        // Output 4: Chart data
+        // payload is a plain numeric value so Dashboard 1.0 and 2.0 both work
+        // without requiring custom X/Y property mapping in the chart node.
+        // The chart node timestamps each point on arrival, which is accurate
+        // enough for real-time monitoring.
         const chartMessages = []
 
         // Consumption series
         chartMessages.push({
           topic: 'consumption',
-          payload: { x: timestamp, y: Math.round(result.currentHourAvgW) }
+          payload: Math.round(result.currentHourAvgW)
         })
 
         // Limit series (convert A to W for same scale)
         const limitW = result.outputLimitA * trackerConfig.phases * trackerConfig.gridVoltage
         chartMessages.push({
           topic: 'limit',
-          payload: { x: timestamp, y: Math.round(limitW) }
+          payload: Math.round(limitW)
         })
 
         // Target series (if not in learning phase)
         if (result.targetLimitW !== null) {
           chartMessages.push({
             topic: 'target',
-            payload: { x: timestamp, y: Math.round(result.targetLimitW) }
+            payload: Math.round(result.targetLimitW)
           })
         }
 
@@ -429,7 +431,7 @@ module.exports = function (RED) {
         if (result.peakAvgW > 0) {
           chartMessages.push({
             topic: 'peak_avg',
-            payload: { x: timestamp, y: Math.round(result.peakAvgW) }
+            payload: Math.round(result.peakAvgW)
           })
         }
 
@@ -437,7 +439,7 @@ module.exports = function (RED) {
         if (batteryStatus && batteryStatus.available) {
           chartMessages.push({
             topic: 'battery_soc',
-            payload: { x: timestamp, y: batteryStatus.currentSoc }
+            payload: batteryStatus.currentSoc
           })
         }
 
