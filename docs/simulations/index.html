@@ -22,106 +22,90 @@
       border-radius: 12px;
       margin-bottom: 25px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 15px;
       text-align: center;
     }
-    .summary-item { }
     .summary-value { font-size: 28px; font-weight: 700; }
     .summary-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
-    .category {
-      margin-top: 25px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
-    }
-    .category:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
-    .category h2 {
-      color: #444;
-      font-size: 1.1em;
-      margin-bottom: 15px;
-    }
-    .scenario-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .scenario-list li {
-      background: white;
-      margin: 10px 0;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-    .scenario-header {
+
+    /* Tabs */
+    .tabs {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+      gap: 4px;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 0;
     }
-    .scenario-list a {
-      color: #0066cc;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 1.05em;
-    }
-    .scenario-list a:hover { text-decoration: underline; }
-    .duration {
-      color: #888;
-      font-size: 0.8em;
-    }
-    .scenario-meta {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.8em;
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.95em;
       font-weight: 500;
-    }
-    .badge-savings {
-      background: #d4edda;
-      color: #155724;
-    }
-    .badge-tracking {
-      background: #e2e3e5;
-      color: #383d41;
-    }
-    .badge-neutral {
-      background: #fff3cd;
-      color: #856404;
-    }
-    .badge-error {
-      background: #f8d7da;
-      color: #721c24;
-    }
-    .saving-detail {
-      color: #28a745;
-      font-size: 0.85em;
-      font-weight: 500;
-    }
-    .description {
       color: #666;
-      font-size: 0.9em;
+      border-radius: 6px 6px 0 0;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
     }
-    .meta {
-      color: #999;
-      font-size: 0.8em;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #ddd;
+    .tab-btn:hover { color: #333; background: #eee; }
+    .tab-btn.active { color: #5a3e8e; border-bottom-color: #5a3e8e; background: white; }
+    .tab-panel { display: none; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; padding: 20px; }
+    .tab-panel.active { display: block; }
+    .tab-description { color: #666; margin: 0 0 18px; line-height: 1.5; }
+
+    /* Per-tab mini stats */
+    .tab-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
+    .tab-stat {
+      background: #f0ecf9;
+      border-radius: 8px;
+      padding: 12px 18px;
+      text-align: center;
+      flex: 1;
+      min-width: 120px;
+    }
+    .tab-stat-value { display: block; font-size: 1.5em; font-weight: 700; color: #5a3e8e; }
+    .tab-stat-label { display: block; font-size: 0.75em; color: #666; text-transform: uppercase; margin-top: 2px; }
+
+    /* Scenario list */
+    .category { margin-top: 22px; padding-top: 18px; border-top: 1px solid #eee; }
+    .category:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+    .category h2 { color: #444; font-size: 1.05em; margin-bottom: 12px; }
+    .scenario-list { list-style: none; padding: 0; margin: 0; }
+    .scenario-list li {
+      background: #fafafa;
+      margin: 8px 0;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid #eee;
+    }
+    .scenario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+    .scenario-list a { color: #0066cc; text-decoration: none; font-weight: 600; font-size: 1.02em; }
+    .scenario-list a:hover { text-decoration: underline; }
+    .duration { color: #999; font-size: 0.8em; }
+    .scenario-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 5px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 500; }
+    .badge-savings { background: #d4edda; color: #155724; }
+    .badge-tracking { background: #e2e3e5; color: #383d41; }
+    .badge-neutral { background: #fff3cd; color: #856404; }
+    .badge-error { background: #f8d7da; color: #721c24; }
+    .saving-detail { color: #28a745; font-size: 0.83em; font-weight: 500; }
+    .description { color: #777; font-size: 0.88em; line-height: 1.4; }
+    .meta { color: #999; font-size: 0.8em; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; }
     .meta a { color: #666; }
   </style>
 </head>
 <body>
   <h1>🔌 Effekttariff Simulation Reports</h1>
   <p class="intro">
-    Interactive simulation reports for the Swedish effekttariff peak shaving system.
-    Each report includes analysis showing baseline vs achieved peaks, charts, and battery behavior.
+    Simulation reports for capacity tariff peak shaving. Each report shows baseline vs achieved peaks,
+    potential savings, and battery behaviour where applicable.
   </p>
 
   <div class="summary-box">
@@ -130,24 +114,33 @@
       <div class="summary-label">Scenarios</div>
     </div>
     <div class="summary-item">
+      <div class="summary-value">2</div>
+      <div class="summary-label">Countries</div>
+    </div>
+    <div class="summary-item">
       <div class="summary-value">5</div>
       <div class="summary-label">With Battery</div>
     </div>
     <div class="summary-item">
       <div class="summary-value">27%</div>
-      <div class="summary-label">Avg Reduction</div>
-    </div>
-    <div class="summary-item">
-      <div class="summary-value">~49 SEK</div>
-      <div class="summary-label">Avg Monthly Saving</div>
+      <div class="summary-label">Avg Peak Reduction</div>
     </div>
   </div>
 
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="general">General</button>
+    <button class="tab-btn" data-tab="sweden">🇸🇪 Sweden</button>
+    <button class="tab-btn" data-tab="belgium">🇧🇪 Belgium</button>
+  </div>
+
+  
+<div id="tab-general" class="tab-panel active">
+  <p class="tab-description">Country-agnostic scenarios that test core algorithm features — peak tracking, battery, resilience.</p>
+  
   
   <div class="category">
     <h2>📊 Basic Scenarios</h2>
     <ul class="scenario-list">
-      
       <li>
         <div class="scenario-header">
           <a href="basicWeek.html">Basic Week</a>
@@ -202,17 +195,106 @@
           <span class="duration">20 days</span>
         </div>
         <div class="scenario-meta">
-          <span class="badge badge-savings">-43% (1.5 kW saved)</span>
-          <span class="saving-detail">~75 SEK/month</span>
+          <span class="badge badge-savings">&#8209;43% (1.5 kW saved)</span>
+          <span class="saving-detail">~75 undefined</span>
         </div>
         <div class="description">Tests the learning phase carryover feature across a month boundary.</div>
       </li>
     </ul>
   </div>
   <div class="category">
-    <h2>🇸🇪 Swedish Provider Configurations</h2>
+    <h2>🔧 Installation Types</h2>
     <ul class="scenario-list">
-      
+      <li>
+        <div class="scenario-header">
+          <a href="singlePhase.html">Single Phase Installation</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">2.5 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests current limit calculation for single phase homes</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="minimumLimit.html">Minimum Limit Enforcement</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">1 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests that minimum limit is respected with very low consumption</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🔋 Battery Features</h2>
+    <ul class="scenario-list">
+      <li>
+        <div class="scenario-header">
+          <a href="batteryCharging.html">Battery Charging</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-savings">&#8209;43% (1.5 kW saved)</span>
+          <span class="saving-detail">~75 undefined</span>
+        </div>
+        <div class="description">Tests smart battery charging to prepare for peak shaving</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="batteryBalancing.html">Battery Balancing</a>
+          <span class="duration">16 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-savings">&#8209;11% (0.4 kW saved)</span>
+          <span class="saving-detail">~19 undefined</span>
+        </div>
+        <div class="description">Tests the periodic battery balancing feature over 16 days with balancing occurring once.</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="dynamicHeadroom.html">Dynamic Headroom</a>
+          <span class="duration">7 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-savings">&#8209;38% (1.5 kW saved)</span>
+          <span class="saving-detail">~76 undefined</span>
+        </div>
+        <div class="description">Tests dynamic adjustment of headroom based on battery SOC.</div>
+      </li>
+    </ul>
+  </div>
+  <div class="category">
+    <h2>🛡️ Resilience</h2>
+    <ul class="scenario-list">
+      <li>
+        <div class="scenario-header">
+          <a href="downtimeDetection.html">Downtime Detection</a>
+          <span class="duration">3 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">4 kW tracked</span>
+          
+        </div>
+        <div class="description">Tests the downtime detection feature with a simulated data gap.</div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div id="tab-sweden" class="tab-panel">
+  <p class="tab-description">Swedish <em>effekttariff</em> — monthly fee based on the average of your top 3 peak hours.</p>
+  
+  
+  <div class="category">
+    <h2>⚡ Provider Configurations</h2>
+    <ul class="scenario-list">
       <li>
         <div class="scenario-header">
           <a href="nightDiscount.html">Night Discount</a>
@@ -262,97 +344,72 @@
       </li>
     </ul>
   </div>
-  <div class="category">
-    <h2>🔧 Installation Types</h2>
-    <ul class="scenario-list">
-      
-      <li>
-        <div class="scenario-header">
-          <a href="singlePhase.html">Single Phase Installation</a>
-          <span class="duration">7 days</span>
-        </div>
-        <div class="scenario-meta">
-          <span class="badge badge-tracking">2.5 kW tracked</span>
-          
-        </div>
-        <div class="description">Tests current limit calculation for single phase homes</div>
-      </li>
+</div>
 
-      <li>
-        <div class="scenario-header">
-          <a href="minimumLimit.html">Minimum Limit Enforcement</a>
-          <span class="duration">7 days</span>
-        </div>
-        <div class="scenario-meta">
-          <span class="badge badge-tracking">1 kW tracked</span>
-          
-        </div>
-        <div class="description">Tests that minimum limit is respected with very low consumption</div>
-      </li>
-    </ul>
+<div id="tab-belgium" class="tab-panel">
+  <p class="tab-description">Belgian <em>capaciteitstarief</em> — annual fee based on a 12-month rolling average of monthly peak 15-min intervals.</p>
+  
+  <div class="tab-stats">
+    <div class="tab-stat"><span class="tab-stat-value">1</span><span class="tab-stat-label">Battery scenarios</span></div>
+    <div class="tab-stat"><span class="tab-stat-value">0%</span><span class="tab-stat-label">Avg peak reduction</span></div>
+    <div class="tab-stat"><span class="tab-stat-value">~0 EUR</span><span class="tab-stat-label">Avg saving / month</span></div>
   </div>
+  
   <div class="category">
-    <h2>🔋 Battery Features</h2>
+    <h2>⚡ Belgium Scenarios</h2>
     <ul class="scenario-list">
-      
       <li>
         <div class="scenario-header">
-          <a href="batteryCharging.html">Battery Charging</a>
-          <span class="duration">7 days</span>
-        </div>
-        <div class="scenario-meta">
-          <span class="badge badge-savings">-43% (1.5 kW saved)</span>
-          <span class="saving-detail">~75 SEK/month</span>
-        </div>
-        <div class="description">Tests smart battery charging to prepare for peak shaving</div>
-      </li>
-
-      <li>
-        <div class="scenario-header">
-          <a href="batteryBalancing.html">Battery Balancing</a>
-          <span class="duration">16 days</span>
-        </div>
-        <div class="scenario-meta">
-          <span class="badge badge-savings">-11% (0.4 kW saved)</span>
-          <span class="saving-detail">~19 SEK/month</span>
-        </div>
-        <div class="description">Tests the periodic battery balancing feature over 16 days with balancing occurring once.</div>
-      </li>
-
-      <li>
-        <div class="scenario-header">
-          <a href="dynamicHeadroom.html">Dynamic Headroom</a>
-          <span class="duration">7 days</span>
-        </div>
-        <div class="scenario-meta">
-          <span class="badge badge-savings">-38% (1.5 kW saved)</span>
-          <span class="saving-detail">~76 SEK/month</span>
-        </div>
-        <div class="description">Tests dynamic adjustment of headroom based on battery SOC.</div>
-      </li>
-    </ul>
-  </div>
-  <div class="category">
-    <h2>🛡️ Resilience Features</h2>
-    <ul class="scenario-list">
-      
-      <li>
-        <div class="scenario-header">
-          <a href="downtimeDetection.html">Downtime Detection</a>
-          <span class="duration">3 days</span>
+          <a href="belgiumBasic.html">Belgium Basic</a>
+          <span class="duration">30 days</span>
         </div>
         <div class="scenario-meta">
           <span class="badge badge-tracking">4 kW tracked</span>
           
         </div>
-        <div class="description">Tests the downtime detection feature with a simulated data gap.</div>
+        <div class="description">Belgian capacity tariff with 15-minute intervals and single peak per month</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="belgiumWithEV.html">Belgium EV Charging</a>
+          <span class="duration">30 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-neutral">11 kW</span>
+          
+        </div>
+        <div class="description">Belgian household with occasional 11kW EV charging showing peak impact</div>
+      </li>
+
+      <li>
+        <div class="scenario-header">
+          <a href="belgiumAnnualRolling.html">Belgium Annual Rolling</a>
+          <span class="duration">395 days</span>
+        </div>
+        <div class="scenario-meta">
+          <span class="badge badge-tracking">8 kW tracked</span>
+          
+        </div>
+        <div class="description">Full year simulation showing 12-month rolling average for Belgian billing</div>
       </li>
     </ul>
   </div>
+</div>
 
   <p class="meta">
     Generated from <a href="https://github.com/dirkjanfaber/node-red-contrib-effekttariff">node-red-contrib-effekttariff</a>.
     Reports are updated when code changes are pushed to the main branch.
   </p>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn, .tab-panel').forEach(el => el.classList.remove('active'))
+        btn.classList.add('active')
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active')
+      })
+    })
+  </script>
 </body>
 </html>
