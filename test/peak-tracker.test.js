@@ -1301,6 +1301,77 @@ describe('peak-tracker', () => {
       })
     })
 
+    describe('State Persistence', () => {
+      const os = require('os')
+      const fs = require('fs')
+      const path = require('path')
+
+      let tmpDir
+
+      beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'effekttariff-test-'))
+      })
+
+      afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true, force: true })
+      })
+
+      it('loadStateFromFile returns null when file does not exist', () => {
+        const result = peakTracker.loadStateFromFile(path.join(tmpDir, 'nonexistent.json'))
+        expect(result).toBeNull()
+      })
+
+      it('loadStateFromFile returns null for corrupt JSON', () => {
+        const file = path.join(tmpDir, 'corrupt.json')
+        fs.writeFileSync(file, 'not-json', 'utf8')
+        const result = peakTracker.loadStateFromFile(file)
+        expect(result).toBeNull()
+      })
+
+      it('saveStateToFile and loadStateFromFile round-trip state correctly', () => {
+        const file = path.join(tmpDir, 'state.json')
+        const state = peakTracker.createInitialState()
+        state.currentMonth = 1
+        state.peaks = [{ date: '2026-02-18', hour: 8, value: 5000, effective: 5000 }]
+        state.previousMonthPeakAvgW = 4500
+
+        peakTracker.saveStateToFile(file, state)
+        const loaded = peakTracker.loadStateFromFile(file)
+
+        expect(loaded.currentMonth).toBe(1)
+        expect(loaded.peaks).toHaveLength(1)
+        expect(loaded.peaks[0].date).toBe('2026-02-18')
+        expect(loaded.previousMonthPeakAvgW).toBe(4500)
+      })
+
+      it('saveStateToFile creates parent directory if missing', () => {
+        const file = path.join(tmpDir, 'nested', 'dir', 'state.json')
+        const state = peakTracker.createInitialState()
+
+        peakTracker.saveStateToFile(file, state)
+
+        expect(fs.existsSync(file)).toBe(true)
+      })
+
+      it('saveStateToFile overwrites previous state atomically', () => {
+        const file = path.join(tmpDir, 'state.json')
+        const stateA = peakTracker.createInitialState()
+        stateA.currentMonth = 0
+
+        peakTracker.saveStateToFile(file, stateA)
+
+        const stateB = peakTracker.createInitialState()
+        stateB.currentMonth = 1
+
+        peakTracker.saveStateToFile(file, stateB)
+
+        const loaded = peakTracker.loadStateFromFile(file)
+        expect(loaded.currentMonth).toBe(1)
+        // No leftover .tmp file
+        expect(fs.existsSync(file + '.tmp')).toBe(false)
+      })
+    })
+
     describe('State Migration', () => {
       it('should add missing Belgium fields to old state', () => {
         const oldState = {
@@ -1319,9 +1390,22 @@ describe('peak-tracker', () => {
         expect(migratedState.currentIntervalSamples).toBe(0)
         expect(migratedState.currentMonthPeak).toBeNull()
         expect(migratedState.monthlyPeaks).toEqual([])
+        expect(migratedState.previousMonthPeakAvgW).toBeNull()
         // Original fields preserved
         expect(migratedState.currentMonth).toBe(1)
         expect(migratedState.peaks).toEqual([])
+      })
+
+      it('should not overwrite existing previousMonthPeakAvgW on migration', () => {
+        const oldState = {
+          currentMonth: 1,
+          peaks: [],
+          previousMonthPeakAvgW: 4500
+        }
+
+        const migratedState = peakTracker.migrateState(oldState)
+
+        expect(migratedState.previousMonthPeakAvgW).toBe(4500)
       })
 
       it('should return new state when input is null', () => {

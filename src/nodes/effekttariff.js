@@ -1,5 +1,6 @@
 'use strict'
 
+const path = require('path')
 const peakTracker = require('../../lib/peak-tracker')
 const forecasting = require('../../lib/forecasting')
 
@@ -66,12 +67,19 @@ module.exports = function (RED) {
     // Track last charge rate for change detection
     let lastChargeRateW = null
 
-    // Storage key for persistent state
-    const storageKey = `effekttariff_${node.id}`
+    // State file in Node-RED user directory — works without any context storage configuration
+    const stateFile = path.join(RED.settings.userDir, 'effekttariff', `${node.id}.json`)
 
-    // Load state from persistent storage and migrate to current format
-    const loadedState = node.context().flow.get(storageKey, 'file')
+    const loadedState = peakTracker.loadStateFromFile(stateFile)
     const state = peakTracker.migrateState(loadedState || peakTracker.createInitialState())
+
+    function saveState () {
+      try {
+        peakTracker.saveStateToFile(stateFile, state)
+      } catch (e) {
+        node.warn(`Effekttariff: Could not save state: ${e.message}`)
+      }
+    }
 
     // Track if this is first message since deploy
     let isFirstMessage = true
@@ -445,7 +453,7 @@ module.exports = function (RED) {
                           chargeRateChanged
         if (shouldSave) {
           state.lastSave = Date.now()
-          node.context().flow.set(storageKey, state, 'file')
+          saveState()
         }
 
         // Output 5: Debug messages (only when debug mode enabled and there are events)
@@ -480,8 +488,7 @@ module.exports = function (RED) {
     })
 
     node.on('close', function (removed, done) {
-      // Save state on close
-      node.context().flow.set(storageKey, state, 'file')
+      saveState()
       if (done) done()
     })
   }
