@@ -51,6 +51,10 @@ Then restart Node-RED.
 
 ## Usage
 
+![Example flow showing the Effekttariff node connected to Victron Energy components](docs/images/flow-example.png)
+
+*Example integration with Victron Energy: grid meter power feeds into the node; outputs drive the inverter current limit, Venus OS grid set-point, battery charge rate, and a Dashboard 2.0 chart.*
+
 ### Input
 
 Connect a Grid Meter node (Power in Watts) to the input. The node expects positive values for grid import.
@@ -63,7 +67,7 @@ Connect a Grid Meter node (Power in Watts) to the input. The node expects positi
 
 3.  **Charge Rate (W)**: Battery charge rate recommendation in Watts (only when battery charging is enabled). Connect to your battery charge controller to ensure the battery is charged before peak hours.
 
-4.  **Chart Data**: Array of chart-ready messages for FlowFuse Dashboard 2.0 (`@flowfuse/node-red-dashboard`). Connect to a `ui-chart` node to visualize consumption, limits, and peaks in real-time. Each message has a `topic` (series name) and `payload` with `x` (timestamp) and `y` (value). Series include: `consumption`, `limit`, `target`, `peak_avg`, `battery_soc`.
+4.  **Chart Data**: Array of chart-ready messages for Dashboard 1.0 and FlowFuse Dashboard 2.0. Connect to a `ui-chart` node to visualize consumption, limits, and peaks in real-time. Each message has a `topic` (series name) and a numeric `payload` (value in Watts or %). Series include: `consumption`, `limit`, `target`, `peak_avg`, `battery_soc`.
 
 ## Configuration
 
