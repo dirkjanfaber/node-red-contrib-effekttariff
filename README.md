@@ -1,13 +1,13 @@
 # node-red-contrib-effekttariff
 
-Node-RED node for capacity tariff peak shaving. Supports both Swedish "effekttariff" and Belgian "capaciteitstarief".
+Node-RED node for capacity tariff peak shaving. Supports both Swedish "effekttariff" and the Flemish (Belgium) "capaciteitstarief".
 
 ## Supported Regions
 
 This node supports two capacity tariff models:
 
 - **Sweden (Effekttariff)**: Hourly measurement, 2-3 highest peaks per month, seasonal (Nov-Mar)
-- **Belgium (Capaciteitstarief)**: 15-minute measurement, single highest peak per month, 12-month rolling average
+- **Flanders, Belgium (Capaciteitstarief)**: 15-minute measurement, single highest peak per month, 12-month rolling average
 
 ## Understanding Capacity Tariffs
 
@@ -20,9 +20,9 @@ In Sweden, your total electricity cost is typically composed of two main parts:
 
 The Swedish power tariff (effektavgift) is based on the **average** of your 2-3 highest hourly consumption values during a month. These peaks are often only measured on different weekdays during specific "peak hours" (e.g., 07:00-21:00) and during winter months (November-March).
 
-### Belgium (Capaciteitstarief)
+### Flanders, Belgium (Capaciteitstarief)
 
-Starting January 2023, Belgian households have a capacity tariff based on:
+Starting January 2023, households in Flanders (Belgium) have a capacity tariff based on:
 
 - **15-minute measurement intervals** (quarter-hourly peaks)
 - **Single highest peak per month** determines monthly capacity
@@ -30,7 +30,7 @@ Starting January 2023, Belgian households have a capacity tariff based on:
 - **24/7 measurement** (no peak hours, no seasonal restrictions)
 - **Cost: ~€50/kW/year** based on the rolling average
 
-A single high-power event (like EV charging at 11kW) can significantly impact your annual capacity fee, making peak shaving especially valuable for Belgian households.
+A single high-power event (like EV charging at 11kW) can significantly impact your annual capacity fee, making peak shaving especially valuable for households in Flanders.
 
 ## How the Power Tariff Works
 
@@ -171,7 +171,7 @@ Example at 230V: 4 kW = 17.4A (1-phase) or 5.8A (3-phase)
 | Kungälv Energi | 3 | 07-21 | Nov-Mar | Yes | Yes |
 | Jönköping Energi | 2 | 07-21 | All year | No | No |
 
-### Belgium
+### Belgium (Flanders)
 
 | Setting | Value |
 |---------|-------|

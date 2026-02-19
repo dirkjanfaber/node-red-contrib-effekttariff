@@ -54,8 +54,8 @@ const TABS = {
     ]
   },
   belgium: {
-    label: '🇧🇪 Belgium',
-    description: 'Belgian <em>capaciteitstarief</em> — annual fee based on a 12-month rolling average of monthly peak 15-min intervals.',
+    label: '🇧🇪 Flanders (Belgium)',
+    description: 'Flemish <em>capaciteitstarief</em> — annual fee based on a 12-month rolling average of monthly peak 15-min intervals. Note: applies to Flanders; Wallonia uses different rules.',
     currency: 'EUR',
     savingLabel: '€/month',
     getSaving: r => r.savingEur,
