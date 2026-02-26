@@ -17,7 +17,7 @@ Always run through this checklist before bumping the version and pushing a tag:
 
 - Internal identifiers (e.g. `region: 'belgium'`, `belgiumMode`) must stay stable for backward compatibility. Only user-facing text should be updated.
 - All core logic (peak tracking, limit calculation) must have unit tests.
-- Never work directly on `main` for new features — use a feature branch.
+- Never commit directly to `main` — all changes (features, fixes, docs, chores) must go through a branch and be merged.
 - No AI attribution in commit messages.
 
 ## Project structure
