@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Prevent direct commits to main (merge commits are allowed)
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [[ "$BRANCH" == "main" ]]; then
+  if git rev-parse -q --verify MERGE_HEAD > /dev/null 2>&1; then
+    exit 0  # merge commit — allow
+  fi
+  echo "❌ Direct commits to 'main' are not allowed."
+  echo "   Create a feature branch and merge instead."
+  exit 1
+fi
+
