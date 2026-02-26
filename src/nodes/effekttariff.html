@@ -64,6 +64,9 @@
       learningMode: { value: 'learning' },
       previousMonthCarryover: { value: 80, validate: RED.validators.number() },
 
+      // Three-phase threshold-based limiting
+      thresholdLimiting: { value: false },
+
       // Debug settings
       debugMode: { value: false }
     },
@@ -401,6 +404,16 @@
     <input type="number" id="node-input-maxBreakerCurrent" min="10" max="63" style="width:80px">
   </div>
 
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-thresholdLimiting" style="width:auto; margin-right:5px">
+    <label for="node-input-thresholdLimiting" style="width:auto" data-i18n="effekttariff.label.thresholdLimiting">Threshold-based limiting (3-phase unbalanced loads)</label>
+  </div>
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <span style="margin-left:5px; color:#666; font-size:11px" data-i18n="effekttariff.help.thresholdLimiting">When enabled, the current limit is only applied once the running average of the current measurement interval reaches the peak threshold. Recommended for three-phase systems where loads may be unbalanced across phases (capaciteitstarief).</span>
+  </div>
+
   <hr>
   <h4 data-i18n="effekttariff.section.battery">Battery Charging</h4>
 
@@ -655,14 +668,23 @@
   </ul>
 
   <h4>Belgium (Capaciteitstarief)</h4>
-  <p>The Belgian capacity tariff charges based on a 12-month rolling average
-  of your monthly peak consumption.</p>
+  <p>The Flemish capacity tariff (capaciteitstarief) charges based on a 12-month rolling average
+  of your monthly peak consumption. Note: this tariff applies to Flanders; Wallonia uses different rules.</p>
   <ul>
-    <li>Tracks 15-minute (quarter-hourly) peaks</li>
+    <li>Tracks 15-minute peaks in <b>fixed blocks</b> aligned to clock boundaries (0:00, 0:15, 0:30, 0:45) — not a rolling window</li>
     <li>Records only the single highest peak per month</li>
     <li>Measures 24/7, all year (no peak hours or seasons)</li>
     <li>Annual billing based on 12-month rolling average (~€50/kW/year)</li>
   </ul>
+
+  <h4>Three-Phase Systems (Capaciteitstarief)</h4>
+  <p>The current limit output is a <b>per-phase</b> value applied equally to all phases.
+  For balanced loads this works well, but for unbalanced loads (e.g. a single phase
+  carrying most of the load) the per-phase limit may trigger unnecessary battery discharge
+  even when total consumption is below the peak threshold.</p>
+  <p>Enable <b>Threshold-based limiting</b> to address this: the current limit is only applied
+  once the running average of the current 15-minute block actually reaches the peak threshold,
+  avoiding unnecessary restriction on unbalanced loads.</p>
 
   <p>This node:</p>
   <ul>

@@ -60,6 +60,8 @@ module.exports = function (RED) {
       // Learning phase settings
       learningMode: config.learningMode || 'learning',
       previousMonthCarryover: parseInt(config.previousMonthCarryover) || 80,
+      // Three-phase threshold-based limiting
+      thresholdLimiting: config.thresholdLimiting || false,
       // Debug settings
       debugMode: config.debugMode || false
     })

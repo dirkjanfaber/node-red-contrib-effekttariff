@@ -1416,5 +1416,87 @@ describe('peak-tracker', () => {
         expect(migratedState.monthlyPeaks).toEqual([])
       })
     })
+
+    describe('Threshold-based Limiting', () => {
+      // Helper: build a Belgium-style config with thresholdLimiting toggle
+      function buildThresholdConfig (thresholdLimiting) {
+        return peakTracker.mergeConfig({
+          region: 'belgium',
+          measurementIntervalMinutes: 60, // Use hourly for simpler test setup
+          peakHoursStart: 0,
+          peakHoursEnd: 24,
+          peakSeasonOnly: false,
+          minimumLimitKw: 1,
+          headroomKw: 0,
+          phases: 3,
+          gridVoltage: 230,
+          maxBreakerCurrent: 25,
+          thresholdLimiting
+        })
+      }
+
+      function stateWithPeak (peakW) {
+        const state = peakTracker.createInitialState()
+        state.currentMonthPeak = { date: '2024-01-15', time: '10:00', value: peakW, effective: peakW }
+        return state
+      }
+
+      it('should always apply limit when thresholdLimiting is false (default)', () => {
+        // Peak recorded at 3000 W; current interval avg is only 1000 W (well below target).
+        // Without threshold limiting the node still outputs the calculated limit.
+        const config = buildThresholdConfig(false)
+        const state = stateWithPeak(3000) // targetLimitW = 3000 (headroomKw = 0)
+
+        const base = new Date('2024-01-16T10:00:00')
+        let result
+        for (let s = 0; s < 5; s++) {
+          const t = new Date(base.getTime() + s * 60000)
+          result = peakTracker.processGridPower(state, config, 1000, t, null)
+        }
+
+        // currentAvgW ≈ 1000 W, targetLimitW = 3000 W — limit is applied regardless
+        expect(result.outputLimitA).toBeLessThan(config.maxBreakerCurrent)
+        const expectedA = Math.round((3000 / (3 * 230)) * 10) / 10
+        expect(result.outputLimitA).toBe(expectedA)
+      })
+
+      it('should output maxBreakerCurrent when thresholdLimiting is true and avg is below target', () => {
+        const config = buildThresholdConfig(true)
+        const state = stateWithPeak(3000) // targetLimitW = 3000 W
+
+        // Feed 1000 W — avg is well below the 3000 W target
+        const base = new Date('2024-01-16T10:00:00')
+        let result
+        for (let s = 0; s < 5; s++) {
+          const t = new Date(base.getTime() + s * 60000)
+          result = peakTracker.processGridPower(state, config, 1000, t, null)
+        }
+
+        expect(result.outputLimitA).toBe(config.maxBreakerCurrent)
+      })
+
+      it('should apply limit when thresholdLimiting is true and avg meets or exceeds target', () => {
+        const config = buildThresholdConfig(true)
+        const state = stateWithPeak(3000) // targetLimitW = 3000 W
+
+        // Feed 3500 W — avg exceeds the 3000 W target
+        const base = new Date('2024-01-16T10:00:00')
+        let result
+        for (let s = 0; s < 5; s++) {
+          const t = new Date(base.getTime() + s * 60000)
+          result = peakTracker.processGridPower(state, config, 3500, t, null)
+        }
+
+        // currentAvgW = 3500 >= targetLimitW = 3000 → limit applied
+        expect(result.outputLimitA).toBeLessThan(config.maxBreakerCurrent)
+        const expectedA = Math.round((3000 / (3 * 230)) * 10) / 10
+        expect(result.outputLimitA).toBe(expectedA)
+      })
+
+      it('should default thresholdLimiting to false', () => {
+        const config = peakTracker.mergeConfig({})
+        expect(config.thresholdLimiting).toBe(false)
+      })
+    })
   })
 })

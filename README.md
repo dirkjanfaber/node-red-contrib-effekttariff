@@ -24,7 +24,7 @@ The Swedish power tariff (effektavgift) is based on the **average** of your 2-3 
 
 Starting January 2023, households in Flanders (Belgium) have a capacity tariff based on:
 
-- **15-minute measurement intervals** (quarter-hourly peaks)
+- **15-minute measurement intervals** using **fixed blocks** aligned to clock boundaries (0:00, 0:15, 0:30, 0:45) — not a rolling window
 - **Single highest peak per month** determines monthly capacity
 - **12-month rolling average** for annual billing
 - **24/7 measurement** (no peak hours, no seasonal restrictions)
@@ -116,6 +116,7 @@ Use the region preset dropdown for quick configuration:
 | Phases | 1 or 3 phase installation | 3 |
 | Grid voltage | Your grid voltage | 230 V |
 | Max breaker | Safety cap, never exceed this | 25 A |
+| Threshold-based limiting | Only apply current limit when the running average of the current interval reaches the peak threshold. Recommended for three-phase systems with unbalanced loads (capaciteitstarief). | No |
 
 ### Battery Charging (Optional)
 
