@@ -5,3 +5,4 @@ simulation-output/
 *.log
 .env
 *.tgz
+CLAUDE.md
