@@ -2,6 +2,9 @@
 
 ## Released
 
+### 0.2.5 — Developer tooling
+- Added `.githooks/pre-commit` hook that blocks direct commits to `main`; merge commits are allowed.
+
 ### 0.2.3 — Three-phase threshold limiting + documentation fixes
 - **Threshold-based limiting** (`thresholdLimiting` option): only apply current limit when the running average of the current measurement interval reaches the peak threshold. Addresses unnecessary battery discharge on three-phase systems with unbalanced loads (capaciteitstarief).
 - **Documentation**: clarified that 15-min measurement uses fixed clock-aligned blocks, not a rolling window. Added three-phase system guidance to node help.
