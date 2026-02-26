@@ -30,15 +30,24 @@
 - [ ] I have added tests for new functionality (if applicable)
 - [ ] I have tested with a real Node-RED instance (if applicable)
 
-## Swedish Provider Considerations
+## Tariff Considerations
 
 <!-- If this change affects tariff calculations, check the relevant boxes -->
 
 - [ ] Not applicable (no tariff calculation changes)
-- [ ] Tested with standard configuration (3 peaks, 07:00-21:00)
+- [ ] Tested with Sweden preset (3 peaks, 07:00-21:00, Nov-Mar)
+- [ ] Tested with Flanders preset (15-min blocks, single peak, 24/7)
 - [ ] Tested with night discount (nattsänkning)
 - [ ] Tested with weekdays-only configuration
-- [ ] Tested with seasonal configuration
+- [ ] Tested with threshold-based limiting (three-phase unbalanced)
+
+## Roadmap / Docs
+
+<!-- For releases or features that affect supported tariffs -->
+
+- [ ] Not applicable
+- [ ] `ROADMAP.md` updated with this change
+- [ ] Relevant `docs/tariffs/*.md` files reviewed and updated if needed
 
 ## Checklist
 

@@ -1,0 +1,74 @@
+name: Release Checklist
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Check package.json version matches tag
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✅ package.json version matches tag: $PKG_VERSION"
+
+      - name: Check ROADMAP.md mentions this version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -q "$VERSION" ROADMAP.md; then
+            echo "❌ ROADMAP.md does not mention version $VERSION"
+            echo "   Please update ROADMAP.md with the release notes before tagging."
+            exit 1
+          fi
+          echo "✅ ROADMAP.md mentions version $VERSION"
+
+      - name: Report tariff doc status
+        run: |
+          echo "## Tariff research status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for f in docs/tariffs/*.md; do
+            COUNTRY=$(basename "$f" .md)
+            STATUS=$(grep -A1 "^## Status" "$f" | tail -1 | sed 's/^[[:space:]]*//')
+            echo "- **$COUNTRY**: $STATUS" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Flag any docs with pending items
+          PENDING=$(grep -rl "not yet defined\|TBD\|to be confirmed\|not yet specified" docs/tariffs/ || true)
+          if [ -n "$PENDING" ]; then
+            echo "### ⚠️ Pending items in tariff docs" >> $GITHUB_STEP_SUMMARY
+            echo "The following tariff docs contain unresolved items — check if anything has changed:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -rn "not yet defined\|TBD\|to be confirmed\|not yet specified" docs/tariffs/ >> $GITHUB_STEP_SUMMARY || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Run tests
+        run: |
+          npm ci
+          npm test
+
+      - name: Check for open release-blocking issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BLOCKERS=$(gh issue list --repo ${{ github.repository }} --label "release-blocker" --state open --json number,title --jq '.[] | "  #\(.number) \(.title)"' 2>/dev/null || echo "")
+          if [ -n "$BLOCKERS" ]; then
+            echo "❌ Open release-blocking issues:" >&2
+            echo "$BLOCKERS" >&2
+            exit 1
+          fi
+          echo "✅ No open release-blocking issues"
