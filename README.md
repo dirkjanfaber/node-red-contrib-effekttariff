@@ -278,6 +278,7 @@ Interactive HTML reports are automatically generated and available online. **[Vi
 | `belgiumBasic` | Belgian capacity tariff with 15-min intervals | 30 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumBasic.html) |
 | `belgiumWithEV` | Belgian household with 11kW EV charging | 30 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumWithEV.html) |
 | `belgiumAnnualRolling` | Full year showing 12-month rolling average | 395 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumAnnualRolling.html) |
+| `belgiumThreephase` | Three-phase unbalanced loads with threshold limiting | 30 days | [View](https://raw.githack.com/dirkjanfaber/node-red-contrib-effekttariff/main/docs/simulations/belgiumThreephase.html) |
 
 ### Running Tests
 

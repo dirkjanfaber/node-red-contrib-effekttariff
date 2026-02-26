@@ -60,7 +60,7 @@ const TABS = {
     savingLabel: '€/month',
     getSaving: r => r.savingEur,
     categories: [
-      { title: '⚡ Belgium Scenarios', scenarios: ['belgiumBasic', 'belgiumWithEV', 'belgiumAnnualRolling'] }
+      { title: '⚡ Belgium Scenarios', scenarios: ['belgiumBasic', 'belgiumWithEV', 'belgiumAnnualRolling', 'belgiumThreephase'] }
     ]
   }
 }
