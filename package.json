@@ -43,7 +43,7 @@
   "devDependencies": {
     "eslint": "^9.39.4",
     "jest": "^30.3.0",
-    "neostandard": "^0.12.2"
+    "neostandard": "^0.13.0"
   },
   "peerDependencies": {
     "node-red": ">=2.0.0"
