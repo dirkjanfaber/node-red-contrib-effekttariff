@@ -241,12 +241,20 @@
         toggleSinglePeakFields()
       }
 
+      function toggleBatteryWarning () {
+        const region = $('#node-input-region').val()
+        $('#battery-belgium-warning').toggle(region === 'belgium')
+      }
+
       $('#node-input-region').on('change', function () {
         const region = $(this).val()
         if (region !== 'custom') {
           applyRegionPreset(region)
         }
+        toggleBatteryWarning()
       })
+
+      toggleBatteryWarning()
     }
   })
 </script>
@@ -421,6 +429,14 @@
     <label>&nbsp;</label>
     <input type="checkbox" id="node-input-batteryEnabled" style="width:auto; margin-right:5px">
     <label for="node-input-batteryEnabled" style="width:auto" data-i18n="effekttariff.label.batteryEnabled">Enable battery charging</label>
+  </div>
+
+  <div class="form-row" id="battery-belgium-warning" style="display:none">
+    <label>&nbsp;</label>
+    <span style="color:#c0392b; font-size:0.9em;">
+      <i class="fa fa-exclamation-triangle"></i>
+      Battery management has no effect with the Flanders profile — all hours are peak hours, so there is no off-peak window to charge in. Use ESS or Dynamic ESS directly for battery control.
+    </span>
   </div>
 
   <div class="form-row battery-row">
