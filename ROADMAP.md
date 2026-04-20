@@ -2,6 +2,12 @@
 
 ## Released
 
+### 0.2.6 — Flanders midnight bug fix
+- **Fixed: Flanders profile treated midnight–07:00 as off-peak** — `peakHoursStart=0` was incorrectly falling back to `7` due to `parseInt("0") || 7` treating `0` as falsy. Belgian users saw a false off-peak window from midnight to 07:00, causing battery charging to accelerate toward a fictitious peak start. (Fixes #14, #16)
+- **Fixed: Peak Hours End field rejected `24`** — the editor input had `max="23"`, making the Belgium preset value of `24` an invalid selection.
+- **Battery warning for Flanders profile** — the node editor now shows a warning when the Flanders profile is selected with battery management enabled, since all hours are peak hours and the off-peak charging logic has no window to operate in.
+- **Developer:** ESLint migrated from `eslint-config-standard@17` (ESLint 8 only) to `neostandard` with ESLint 9 flat config. Jest upgraded from 29.7.0 to 30.3.0.
+
 ### 0.2.5 — Developer tooling
 - Added `.githooks/pre-commit` hook that blocks direct commits to `main`; merge commits are allowed.
 
