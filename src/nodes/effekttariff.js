@@ -23,8 +23,8 @@ module.exports = function (RED) {
       // Peak tracking settings
       peakCount: parseInt(config.peakCount) || 3,
       onePeakPerDay: config.onePeakPerDay !== false,
-      peakHoursStart: parseInt(config.peakHoursStart) || 7,
-      peakHoursEnd: parseInt(config.peakHoursEnd) || 21,
+      peakHoursStart: Number.isFinite(parseInt(config.peakHoursStart)) ? parseInt(config.peakHoursStart) : 7,
+      peakHoursEnd: Number.isFinite(parseInt(config.peakHoursEnd)) ? parseInt(config.peakHoursEnd) : 21,
       weekdaysOnly: config.weekdaysOnly || false,
       nightDiscount: config.nightDiscount || false,
       peakSeasonOnly: config.peakSeasonOnly !== false,

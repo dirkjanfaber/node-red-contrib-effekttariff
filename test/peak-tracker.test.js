@@ -85,6 +85,24 @@ describe('peak-tracker', () => {
       expect(peakTracker.isInPeakHours(23, 1, 1, config)).toBe(false) // 23:00
     })
 
+    it('should treat all hours as peak when peakHoursStart is 0 (Belgium profile)', () => {
+      // Regression: parseInt("0") || 7 evaluates to 7 because 0 is falsy.
+      // peakHoursStart=0 must be preserved so Belgian users don't get a false
+      // off-peak window from midnight to 07:00.
+      const belgiumConfig = peakTracker.mergeConfig({
+        region: 'belgium',
+        peakSeasonOnly: false
+      })
+
+      expect(belgiumConfig.peakHoursStart).toBe(0)
+      expect(belgiumConfig.peakHoursEnd).toBe(24)
+
+      // All hours 0–23 must be peak hours
+      for (let hour = 0; hour < 24; hour++) {
+        expect(peakTracker.isInPeakHours(hour, 1, 1, belgiumConfig)).toBe(true) // hour ${hour}
+      }
+    })
+
     it('should respect weekdaysOnly setting', () => {
       const weekdayConfig = peakTracker.mergeConfig({
         peakSeasonOnly: false,
