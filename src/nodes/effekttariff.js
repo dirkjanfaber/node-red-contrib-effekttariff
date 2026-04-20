@@ -117,9 +117,9 @@ module.exports = function (RED) {
         })
 
         // Read battery state from global context if enabled
+        const globalContext = node.context().global
         let batteryState = null
         if (trackerConfig.batteryEnabled) {
-          const globalContext = node.context().global
           const soc = globalContext.get(trackerConfig.socContextKey)
           const minSoc = globalContext.get(trackerConfig.minSocContextKey)
 
