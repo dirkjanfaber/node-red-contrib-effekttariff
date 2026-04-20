@@ -550,7 +550,6 @@ describe('peak-tracker', () => {
       expect(result.downtime.toHour).toBe(2)
       expect(result.downtime.missedHours).toBe(2) // 00:00, 01:00
     })
-
   })
 
   // ============================================================================
@@ -795,7 +794,7 @@ describe('peak-tracker', () => {
         state.isBalancing = true
         // First, reach 100%
         let now = new Date(2024, 0, 15, 2, 0, 0)
-        let batteryState = { soc: 100, minSoc: 20 }
+        const batteryState = { soc: 100, minSoc: 20 }
         let result = peakTracker.calculateChargeRate(state, balancingConfig, batteryState, now)
 
         expect(result.balancingActive).toBe(true)

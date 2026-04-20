@@ -125,7 +125,7 @@ scenarioList.forEach((s, index) => {
 const resultMap = {}
 results.forEach(r => { resultMap[r.key] = r })
 
-function savingsBadge (result, tabCfg) {
+function savingsBadge (result, _tabCfg) {
   if (result.error) return '<span class="badge badge-error">Error</span>'
   if (!result.hasBattery) return `<span class="badge badge-tracking">${result.achievedKw} kW tracked</span>`
   if (result.reductionPercent > 0) {
