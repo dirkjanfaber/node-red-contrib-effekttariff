@@ -2,6 +2,9 @@
 
 ## Released
 
+### 0.2.7 — Fluvius P1 input node
+- **New `effekttariff-p1` node** — adapts Fluvius smart meter P1 data (OBIS `1-0:1.4.0` quarter-hour demand, `1-0:1.6.0` monthly peak) for use with the effekttariff node. Supports SB10's semicolon-separated ESPHome/MQTT format and individual msg properties. (Closes #18)
+
 ### 0.2.6 — Flanders midnight bug fix
 - **Fixed: Flanders profile treated midnight–07:00 as off-peak** — `peakHoursStart=0` was incorrectly falling back to `7` due to `parseInt("0") || 7` treating `0` as falsy. Belgian users saw a false off-peak window from midnight to 07:00, causing battery charging to accelerate toward a fictitious peak start. (Fixes #14, #16)
 - **Fixed: Peak Hours End field rejected `24`** — the editor input had `max="23"`, making the Belgium preset value of `24` an invalid selection.

@@ -34,7 +34,8 @@
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
-      "effekttariff": "src/nodes/effekttariff.js"
+      "effekttariff": "src/nodes/effekttariff.js",
+      "effekttariff-p1": "src/nodes/effekttariff-p1.js"
     }
   },
   "engines": {

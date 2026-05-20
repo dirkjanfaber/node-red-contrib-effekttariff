@@ -1,0 +1,118 @@
+<script type="text/javascript">
+  RED.nodes.registerType('effekttariff-p1', {
+    category: 'Victron Energy',
+    color: '#F7AB3E',
+    defaults: {
+      name: { value: '' },
+      inputFormat: { value: 'semicolon' },
+      inputUnit: { value: 'kW' },
+      p15Property: { value: 'p15' },
+      pmaxProperty: { value: 'pmaxMonth' },
+      pNowProperty: { value: 'pNow' },
+      voltageProperty: { value: 'voltage' }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: 'font-awesome/fa-tachometer',
+    label: function () {
+      return this.name || 'Fluvius P1'
+    },
+    paletteLabel: 'Fluvius P1',
+    inputLabels: ['Fluvius P1 data'],
+    outputLabels: ['Grid Power (W) → effekttariff'],
+    oneditprepare: function () {
+      function togglePropertyFields () {
+        const isProperties = $('#node-input-inputFormat').val() === 'properties'
+        $('#fluvius-properties-section').toggle(isProperties)
+        $('#fluvius-unit-row').toggle(isProperties)
+      }
+
+      $('#node-input-inputFormat').on('change', togglePropertyFields)
+      togglePropertyFields()
+    }
+  })
+</script>
+
+<script type="text/html" data-template-name="effekttariff-p1">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+
+  <hr>
+  <h4>Input</h4>
+
+  <div class="form-row">
+    <label for="node-input-inputFormat"><i class="fa fa-list"></i> Format</label>
+    <select id="node-input-inputFormat" style="width:260px">
+      <option value="semicolon">Semicolon-separated (P_now;P15;Pmax;Voltage)</option>
+      <option value="properties">msg properties</option>
+    </select>
+  </div>
+
+  <div class="form-row" id="fluvius-unit-row">
+    <label for="node-input-inputUnit"><i class="fa fa-bolt"></i> Unit</label>
+    <select id="node-input-inputUnit" style="width:80px">
+      <option value="kW">kW</option>
+      <option value="W">W</option>
+    </select>
+  </div>
+
+  <div id="fluvius-properties-section">
+    <div class="form-row">
+      <label for="node-input-p15Property"><i class="fa fa-tag"></i> P15 property</label>
+      <input type="text" id="node-input-p15Property" style="width:160px" placeholder="p15">
+      <span style="color:#888; font-size:11px; margin-left:6px">OBIS 1-0:1.4.0 — quarter-hour avg (required)</span>
+    </div>
+    <div class="form-row">
+      <label for="node-input-pmaxProperty"><i class="fa fa-tag"></i> Monthly peak property</label>
+      <input type="text" id="node-input-pmaxProperty" style="width:160px" placeholder="pmaxMonth">
+      <span style="color:#888; font-size:11px; margin-left:6px">OBIS 1-0:1.6.0 — optional</span>
+    </div>
+    <div class="form-row">
+      <label for="node-input-pNowProperty"><i class="fa fa-tag"></i> Instant power property</label>
+      <input type="text" id="node-input-pNowProperty" style="width:160px" placeholder="pNow">
+      <span style="color:#888; font-size:11px; margin-left:6px">optional</span>
+    </div>
+    <div class="form-row">
+      <label for="node-input-voltageProperty"><i class="fa fa-tag"></i> Voltage property</label>
+      <input type="text" id="node-input-voltageProperty" style="width:160px" placeholder="voltage">
+      <span style="color:#888; font-size:11px; margin-left:6px">optional, default 230 V</span>
+    </div>
+  </div>
+</script>
+
+<script type="text/html" data-help-name="effekttariff-p1">
+  <p>Adapts Fluvius smart meter (P1 port) data for use with the <b>effekttariff</b> node in Belgium / capaciteitstarief mode.</p>
+
+  <p>The Fluvius digital meter exposes two OBIS codes that standard Dutch DSMR meters do not carry:</p>
+  <ul>
+    <li><code>1-0:1.4.0</code> — current quarter-hour demand (kW): the running average of energy consumed since the start of the current 15-minute clock-aligned block. This is exactly the value Fluvius uses for billing.</li>
+    <li><code>1-0:1.6.0</code> — monthly peak demand (kW): the highest quarter-hour average recorded so far this month.</li>
+  </ul>
+
+  <h3>Input formats</h3>
+
+  <h4>Semicolon-separated (default)</h4>
+  <p><code>msg.payload</code> must be a string: <code>"P_now;P15;Pmax_month;U_grid"</code></p>
+  <p>Power values in kW, voltage in V. Only <code>P15</code> (field 2) is required; the rest are optional but recommended.</p>
+  <p>This matches the format produced by SB10's ESPHome / MQTT integration.</p>
+
+  <h4>msg properties</h4>
+  <p>Individual numeric properties on the message. Property names and unit (kW or W) are configurable. <code>p15</code> is required; the others are optional.</p>
+
+  <h3>Output</h3>
+  <p>A single message with:</p>
+  <ul>
+    <li><code>msg.payload</code> — quarter-hour average in <b>W</b> (ready for effekttariff input in Belgium mode)</li>
+    <li><code>msg.pmaxMonth</code> — monthly peak in W (informational)</li>
+    <li><code>msg.pNow</code> — instantaneous power in W (informational)</li>
+    <li><code>msg.voltage</code> — grid voltage in V</li>
+  </ul>
+
+  <h3>Wiring</h3>
+  <p>Connect the output of this node directly to the input of an <b>effekttariff</b> node configured with the <b>Belgium (Capaciteitstarief)</b> preset.</p>
+
+  <h3>Notes</h3>
+  <p>Because <code>msg.payload</code> carries the Fluvius meter's own running average rather than an instantaneous reading, the effekttariff node's internal accumulator computes the average of identical values — which equals the meter value. The result is that the effekttariff node tracks the exact same figure that Fluvius uses for billing.</p>
+</script>

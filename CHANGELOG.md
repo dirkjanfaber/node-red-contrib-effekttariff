@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.7 — Fluvius P1 input node
+
+### New
+
+- **`effekttariff-p1` node** — adapts Fluvius smart meter P1 port data for use with the `effekttariff` node in Belgium / capaciteitstarief mode. The Fluvius meter exposes OBIS `1-0:1.4.0` (current quarter-hour demand, kW) and `1-0:1.6.0` (monthly peak demand, kW) — the exact values used for billing — which are not present on standard Dutch DSMR meters. This node normalises the meter data and outputs `msg.payload` in Watts, ready to wire directly into the `effekttariff` node. Supports SB10's semicolon-separated ESPHome/MQTT format (`P_now;P15;Pmax_month;U_grid`) and individual msg properties. (Closes #18)
+
+---
+
 ## 0.2.6 — Flanders midnight bug fix
 
 ### Bug fixes
