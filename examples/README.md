@@ -47,6 +47,37 @@ You'll need to update the Victron node service IDs to match your system:
 3. **Max Charge Rate**: Match your inverter's capabilities.
 4. **Grid Company Settings**: Enable weekdaysOnly, nightDiscount, or seasonal settings as needed.
 
+## Fluvius P1 — Belgium (Capaciteitstarief)
+
+**File:** `fluvius-p1-belgium.json`
+
+Demonstrates the full Belgium wiring: Fluvius P1 smart meter → `effekttariff-p1` → `effekttariff` (Belgium preset).
+
+### Features
+
+- Two inject nodes simulate both supported input formats (semicolon string and msg properties)
+- `effekttariff-p1` normalises the Fluvius meter data to Watts
+- `effekttariff` is pre-configured with the Belgium / Capaciteitstarief preset (15-min intervals, single peak, 12-month rolling average)
+- Debug nodes on outputs 1 (current limit), 2 (status), and 4 (chart data)
+
+### Requirements
+
+No extra packages required beyond `node-red-contrib-effekttariff`. In production, replace the inject nodes with your actual MQTT or ESPHome P1 source.
+
+### Wiring
+
+```
+MQTT / ESPHome P1 source  →  effekttariff-p1  →  effekttariff (Belgium preset)
+```
+
+### Adjusting for Your Setup
+
+1. **Input format**: Default is the SB10 semicolon format (`P_now;P15;Pmax_month;U_grid`). Switch to *msg properties* in the `effekttariff-p1` node config if your integration sends individual properties.
+2. **Threshold limiting**: Enable in the `effekttariff` node for three-phase installations with unbalanced loads.
+3. **Current limit output**: Connect output 1 to your inverter's AC input current limit (e.g., Victron `Ac/In/1/CurrentLimit`).
+
+---
+
 ## Creating Your Own Examples
 
 When creating flows with the effekttariff node:

@@ -1,0 +1,253 @@
+[
+    {
+        "id": "p1tab001",
+        "type": "tab",
+        "label": "Fluvius P1 — Belgium example",
+        "disabled": false,
+        "info": "Example: Fluvius P1 smart meter → effekttariff-p1 → effekttariff (Belgium / Capaciteitstarief)\n\nIn production, replace the inject nodes with your actual MQTT or ESPHome P1 source.\n\nWiring:\n  P1 source → effekttariff-p1 → effekttariff (Belgium preset)\n\nThe effekttariff-p1 node normalises the meter's quarter-hour demand (OBIS 1-0:1.4.0)\nto Watts and passes it to the effekttariff node, which tracks the exact billing value\nFluvius uses for the capaciteitstarief.",
+        "env": []
+    },
+    {
+        "id": "p1comment001",
+        "type": "comment",
+        "z": "p1tab001",
+        "name": "Replace inject nodes with your MQTT / ESPHome P1 source in production",
+        "info": "",
+        "x": 300,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "p1inject001",
+        "type": "inject",
+        "z": "p1tab001",
+        "name": "Simulate SB10 P1 (semicolon)",
+        "props": [
+            {
+                "p": "payload",
+                "v": "2.5;1.8;3.2;230",
+                "vt": "str"
+            }
+        ],
+        "repeat": "10",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "2.5;1.8;3.2;230",
+        "payloadType": "str",
+        "x": 180,
+        "y": 180,
+        "wires": [
+            [
+                "p1node001"
+            ]
+        ]
+    },
+    {
+        "id": "p1inject002",
+        "type": "inject",
+        "z": "p1tab001",
+        "name": "Simulate msg properties",
+        "props": [
+            {
+                "p": "payload",
+                "v": "",
+                "vt": "date"
+            },
+            {
+                "p": "p15",
+                "v": "1.8",
+                "vt": "num"
+            },
+            {
+                "p": "pmaxMonth",
+                "v": "3.2",
+                "vt": "num"
+            },
+            {
+                "p": "pNow",
+                "v": "2.5",
+                "vt": "num"
+            },
+            {
+                "p": "voltage",
+                "v": "230",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 260,
+        "wires": [
+            [
+                "p1node001b"
+            ]
+        ]
+    },
+    {
+        "id": "p1node001",
+        "type": "effekttariff-p1",
+        "z": "p1tab001",
+        "name": "Fluvius P1",
+        "inputFormat": "semicolon",
+        "inputUnit": "kW",
+        "p15Property": "p15",
+        "pmaxProperty": "pmaxMonth",
+        "pNowProperty": "pNow",
+        "voltageProperty": "voltage",
+        "x": 450,
+        "y": 180,
+        "wires": [
+            [
+                "p1node002"
+            ]
+        ]
+    },
+    {
+        "id": "p1node001b",
+        "type": "effekttariff-p1",
+        "z": "p1tab001",
+        "name": "Fluvius P1 (properties)",
+        "inputFormat": "properties",
+        "inputUnit": "kW",
+        "p15Property": "p15",
+        "pmaxProperty": "pmaxMonth",
+        "pNowProperty": "pNow",
+        "voltageProperty": "voltage",
+        "x": 450,
+        "y": 260,
+        "wires": [
+            [
+                "p1node002"
+            ]
+        ]
+    },
+    {
+        "id": "p1node002",
+        "type": "effekttariff",
+        "z": "p1tab001",
+        "name": "Belgium (Capaciteitstarief)",
+        "region": "belgium",
+        "measurementInterval": "15",
+        "singlePeakMode": true,
+        "annualBillingEnabled": true,
+        "rollingMonths": 12,
+        "peakCount": 1,
+        "onePeakPerDay": false,
+        "peakHoursStart": 0,
+        "peakHoursEnd": 24,
+        "weekdaysOnly": false,
+        "nightDiscount": false,
+        "peakSeasonOnly": false,
+        "peakSeasonStart": 11,
+        "peakSeasonEnd": 3,
+        "minimumLimit": "2.5",
+        "headroom": 0.3,
+        "phases": 3,
+        "gridVoltage": 230,
+        "maxBreakerCurrent": 25,
+        "thresholdLimiting": false,
+        "batteryEnabled": false,
+        "socContextKey": "battery.soc",
+        "minSocContextKey": "battery.minSoc",
+        "batteryCapacity": 10,
+        "maxChargeRate": 3000,
+        "socBuffer": 20,
+        "forecastSource": "none",
+        "forecastContextKey": "",
+        "morningPeakStart": "",
+        "morningPeakEnd": "",
+        "morningPeakWeight": "",
+        "eveningPeakStart": "",
+        "eveningPeakEnd": "",
+        "eveningPeakWeight": "",
+        "budgetBuffer": "",
+        "batteryBalancingEnabled": false,
+        "batteryBalancingSocThreshold": "",
+        "batteryBalancingTargetSoc": "",
+        "batteryBalancingHoldHours": "",
+        "batteryBalancingStartTime": "",
+        "batteryBalancingEndTime": "",
+        "dynamicHeadroomEnabled": false,
+        "dynamicHeadroomRules": "",
+        "downtimeDetectionEnabled": false,
+        "downtimeDetectionTriggerHours": "",
+        "downtimeDetectionAction": "log",
+        "learningMode": "learning",
+        "previousMonthCarryover": "",
+        "debugMode": false,
+        "x": 700,
+        "y": 220,
+        "wires": [
+            [
+                "p1debug001"
+            ],
+            [
+                "p1debug002"
+            ],
+            [],
+            [
+                "p1debug003"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "p1debug001",
+        "type": "debug",
+        "z": "p1tab001",
+        "name": "current limit (A)",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 960,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "p1debug002",
+        "type": "debug",
+        "z": "p1tab001",
+        "name": "status",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "p1debug003",
+        "type": "debug",
+        "z": "p1tab001",
+        "name": "chart data",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 960,
+        "y": 280,
+        "wires": []
+    }
+]
