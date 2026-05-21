@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-effekttariff",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Node-RED node for capacity tariff peak shaving — Swedish effekttariff and Belgian capaciteitstarief",
   "keywords": [
     "node-red",
@@ -34,7 +34,8 @@
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
-      "effekttariff": "src/nodes/effekttariff.js"
+      "effekttariff": "src/nodes/effekttariff.js",
+      "effekttariff-p1": "src/nodes/effekttariff-p1.js"
     }
   },
   "engines": {

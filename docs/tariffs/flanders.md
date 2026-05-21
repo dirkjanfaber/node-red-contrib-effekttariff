@@ -30,6 +30,21 @@ The network tariff measures **total power across all phases**. The node outputs 
 
 For unbalanced loads (one phase carrying most of the load), enable **Threshold-based limiting**: the current limit is only applied once the 15-min running average actually reaches the peak target. See `thresholdLimiting` config option.
 
+## Fluvius P1 input (recommended for digital meter users)
+
+Fluvius digital meters expose two OBIS codes via the P1 port that are not present on standard Dutch DSMR meters:
+
+| OBIS code | Description |
+|---|---|
+| `1-0:1.4.0` | Current quarter-hour demand (kW) — the running average since the start of the current 15-min block. This is the value Fluvius uses for billing. |
+| `1-0:1.6.0` | Monthly peak demand (kW) — the highest quarter-hour average recorded so far this month. |
+
+Use the **`effekttariff-p1`** node to adapt this data for the effekttariff node. It normalises the meter values to Watts and puts the quarter-hour demand in `msg.payload`, which is exactly what the effekttariff Belgium mode expects.
+
+**Wiring:** `MQTT / P1 source` → `effekttariff-p1` → `effekttariff (Belgium preset)`
+
+Because the meter's own running average is used, the effekttariff node tracks the exact same value that Fluvius uses for billing — no internal accumulator drift, no clock-alignment concerns.
+
 ## Sources
 
 - [Fluvius — Capaciteitstarief uitleg](https://www.fluvius.be/nl/blog/capaciteitstarief/capaciteitstarief-nieuwe-berekening-nettarieven-piekvermogen)

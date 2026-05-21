@@ -49,6 +49,18 @@ npm install node-red-contrib-effekttariff
 
 Then restart Node-RED.
 
+## Nodes
+
+### effekttariff
+
+The main peak-shaving node. Tracks consumption peaks and outputs an AC input current limit to keep your monthly capacity fee in check. Supports Swedish effekttariff and Flemish capaciteitstarief billing models.
+
+### effekttariff-p1
+
+Adapter for smart meters that expose OBIS `1-0:1.4.0` (quarter-hour demand) and `1-0:1.6.0` (monthly peak) on their P1 port — currently Fluvius digital meters in Flanders. Normalises the meter data to Watts and outputs it in the format `effekttariff` expects, so the node tracks the exact billing value rather than computing its own accumulation.
+
+Wire it as: **P1 source** (MQTT / ESPHome) → **effekttariff-p1** → **effekttariff (Belgium preset)**
+
 ## Usage
 
 ![Example flow showing the Effekttariff node connected to Victron Energy components](docs/images/flow-example.png)
