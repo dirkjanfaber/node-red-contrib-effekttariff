@@ -137,15 +137,26 @@ describe('fluvius-p1-parser', () => {
     })
 
     it('throws when p15 property is missing', () => {
-      expect(() => parsePropertiesFormat({}, defaultConfig)).toThrow()
+      expect(() => parsePropertiesFormat({}, defaultConfig)).toThrow(
+        /p15 not found on message.*Check that the upstream node sets msg\.p15/
+      )
     })
 
     it('throws when p15 value is non-numeric', () => {
-      expect(() => parsePropertiesFormat({ p15: 'bad' }, defaultConfig)).toThrow()
+      expect(() => parsePropertiesFormat({ p15: 'bad' }, defaultConfig)).toThrow(
+        /p15 not found on message/
+      )
     })
 
     it('throws when p15 value is negative', () => {
       expect(() => parsePropertiesFormat({ p15: -1 }, defaultConfig)).toThrow()
+    })
+
+    it('includes a hint when the p15 property name looks like a number', () => {
+      const config = { ...defaultConfig, p15Property: '1800' }
+      expect(() => parsePropertiesFormat({}, config)).toThrow(
+        /looks like a value.*expects a property name/
+      )
     })
   })
 
